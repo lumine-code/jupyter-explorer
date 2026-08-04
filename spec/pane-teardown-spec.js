@@ -1,4 +1,4 @@
-const DataExplorerPane = require("../lib/data-explorer-pane");
+const ExplorerPane = require("../lib/explorer-pane");
 
 // A pane drops an item only when the item tells it so. Losing the kernel
 // service destroys the item directly rather than through `pane.destroyItem`,
@@ -6,7 +6,7 @@ const DataExplorerPane = require("../lib/data-explorer-pane");
 
 describe("jupyter-explorer pane teardown", () => {
   it("leaves no tab behind when destroyed directly", () => {
-    const item = new DataExplorerPane();
+    const item = new ExplorerPane();
     const pane = atom.workspace.getCenter().getActivePane();
     pane.addItem(item);
 
@@ -18,7 +18,7 @@ describe("jupyter-explorer pane teardown", () => {
   });
 
   it("survives being destroyed twice", () => {
-    const item = new DataExplorerPane();
+    const item = new ExplorerPane();
     item.destroy();
     expect(() => item.destroy()).not.toThrow();
   });

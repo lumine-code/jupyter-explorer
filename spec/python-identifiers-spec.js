@@ -1,4 +1,4 @@
-const { dataExplorerStore, buildSerializerCode } = require("../lib/data-explorer-store");
+const { explorerStore, buildSerializerCode } = require("../lib/explorer-store");
 
 // This panel drives a Python kernel by generating helper code around the user's
 // expression. Every package rename ran a blanket sed that reached inside those
@@ -12,7 +12,7 @@ const { dataExplorerStore, buildSerializerCode } = require("../lib/data-explorer
 
 // Identifier positions in the emitted Python. Deliberately not a blanket ban on
 // hyphens: the code contains string literals that legitimately hold one, such
-// as the "<data-explorer>" filename passed to compile().
+// as the "<jupyter-explorer>" filename passed to compile().
 const DEF = /^[ \t]*def[ \t]+([^\s(]+)[ \t]*\(/gm;
 const DEL = /^[ \t]*del[ \t]+([^\s\n]+)/gm;
 // Every token the rename could have touched, wherever it appears.
@@ -58,7 +58,7 @@ function recordingKernel(captured) {
 
 describe("generated Python helper code", () => {
   afterEach(() => {
-    dataExplorerStore.reset();
+    explorerStore.reset();
   });
 
   it("names the serializer with a valid identifier", () => {
@@ -67,10 +67,10 @@ describe("generated Python helper code", () => {
 
   it("sends the serializer valid identifiers for a real expression", () => {
     const captured = [];
-    dataExplorerStore.load(recordingKernel(captured), "df");
+    explorerStore.load(recordingKernel(captured), "df");
 
     expect(captured.length).toBe(1);
     expectValidPythonIdentifiers(captured[0].code);
-    expect(captured[0].code).toContain("def _jupyter_data_explorer():");
+    expect(captured[0].code).toContain("def _jupyter_explorer():");
   });
 });

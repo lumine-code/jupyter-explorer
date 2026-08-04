@@ -1,5 +1,5 @@
 const main = require("../lib/main");
-const { dataExplorerStore } = require("../lib/data-explorer-store");
+const { explorerStore } = require("../lib/explorer-store");
 
 // The Variables panel lives in another package and hands a name over through
 // `jupyter.explorer`. These pin the shape that seam depends on.
@@ -30,9 +30,9 @@ function fakeProvider(kernel, expression) {
 
 describe("jupyter.explorer", () => {
   afterEach(() => {
-    dataExplorerStore.reset();
+    explorerStore.reset();
     for (const item of atom.workspace.getPaneItems()) {
-      if (item.getURI?.() === main.DATA_EXPLORER_URI) {
+      if (item.getURI?.() === main.EXPLORER_URI) {
         item.destroy();
       }
     }
@@ -42,11 +42,11 @@ describe("jupyter.explorer", () => {
     main.activate();
     const kernel = fakeKernel();
 
-    const item = await main.provideDataExplorer().explore(kernel, "df.head()");
+    const item = await main.provideExplorer().explore(kernel, "df.head()");
 
-    expect(dataExplorerStore.kernel).toBe(kernel);
-    expect(dataExplorerStore.expression).toBe("df.head()");
-    expect(item.getURI()).toBe(main.DATA_EXPLORER_URI);
+    expect(explorerStore.kernel).toBe(kernel);
+    expect(explorerStore.expression).toBe("df.head()");
+    expect(item.getURI()).toBe(main.EXPLORER_URI);
     main.deactivate();
   });
 
@@ -57,8 +57,8 @@ describe("jupyter.explorer", () => {
 
     await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
 
-    expect(dataExplorerStore.kernel).toBe(kernel);
-    expect(dataExplorerStore.expression).toBe("df.head()");
+    expect(explorerStore.kernel).toBe(kernel);
+    expect(explorerStore.expression).toBe("df.head()");
     main.deactivate();
   });
 
@@ -69,8 +69,8 @@ describe("jupyter.explorer", () => {
 
     await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
 
-    expect(dataExplorerStore.kernel).toBe(kernel);
-    expect(dataExplorerStore.expression).toBe("");
+    expect(explorerStore.kernel).toBe(kernel);
+    expect(explorerStore.expression).toBe("");
     main.deactivate();
   });
 
@@ -78,7 +78,7 @@ describe("jupyter.explorer", () => {
     main.activate();
     const kernel = fakeKernel();
 
-    const item = await main.provideDataExplorer().explore(kernel, "df");
+    const item = await main.provideExplorer().explore(kernel, "df");
 
     expect(item.getJupyterKernel()).toBe(kernel);
     main.deactivate();
@@ -90,12 +90,12 @@ describe("jupyter.explorer", () => {
     const provider = fakeProvider(kernel, "df");
     main.consumeJupyterKernel(provider);
 
-    await main.provideDataExplorer().explore(kernel, "df");
-    expect(dataExplorerStore.kernel).toBe(kernel);
+    await main.provideExplorer().explore(kernel, "df");
+    expect(explorerStore.kernel).toBe(kernel);
 
     provider.removed[0](kernel);
 
-    expect(dataExplorerStore.kernel).toBe(null);
+    expect(explorerStore.kernel).toBe(null);
     main.deactivate();
   });
 

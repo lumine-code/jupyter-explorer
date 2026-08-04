@@ -3,25 +3,25 @@
     "alt-h d": "jupyter-explorer:explore"
   },
 
-  "atom-workspace atom-text-editor.data-explorer-expression:not([mini])": {
+  "atom-workspace atom-text-editor.explorer-expression:not([mini])": {
     "enter": "core:confirm",
     "shift-enter": "editor:newline",
     "escape": "core:cancel",
     "tab": "jupyter-explorer:focus-toolbar",
     "shift-tab": "jupyter-explorer:focus-body"
   },
-  "atom-workspace .data-explorer-toolbar-row": {
+  "atom-workspace .explorer-toolbar-row": {
     "left": "jupyter-explorer:toolbar-left",
     "right": "jupyter-explorer:toolbar-right",
     "enter": "jupyter-explorer:toolbar-confirm",
     "tab": "jupyter-explorer:focus-body",
     "shift-tab": "jupyter-explorer:focus-expression"
   },
-  "atom-workspace .data-explorer-body": {
+  "atom-workspace .explorer-body": {
     "tab": "jupyter-explorer:focus-expression",
     "shift-tab": "jupyter-explorer:focus-toolbar"
   },
-  "atom-workspace .data-explorer-canvas-wrap": {
+  "atom-workspace .explorer-canvas-wrap": {
     "enter": "core:confirm",
     "backspace": "jupyter-explorer:drill-up",
     "up": "core:move-up",

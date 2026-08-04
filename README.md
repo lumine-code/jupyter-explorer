@@ -26,7 +26,7 @@ Commands available in `atom-workspace`:
 - `jupyter-explorer:explore`: explore the expression under the cursor,
 - `jupyter-explorer:open`: open the panel — an empty one picks up the active kernel and the expression under the cursor.
 
-Commands available in `.data-explorer-body`, `.data-explorer-toolbar-row` and the expression editor:
+Commands available in `.explorer-body`, `.explorer-toolbar-row` and the expression editor:
 
 - `jupyter-explorer:focus-expression`: move focus to the expression editor,
 - `jupyter-explorer:focus-toolbar`: move focus to the toolbar,
@@ -36,7 +36,7 @@ Commands available in `.data-explorer-body`, `.data-explorer-toolbar-row` and th
 - `jupyter-explorer:toolbar-confirm`: activate the focused toolbar control,
 - `jupyter-explorer:drill-up`: leave the value you drilled into.
 
-Commands available in `.data-explorer-canvas-wrap`:
+Commands available in `.explorer-canvas-wrap`:
 
 - `jupyter-explorer:grid-page-up`: move a page up,
 - `jupyter-explorer:grid-page-down`: move a page down,
@@ -61,7 +61,7 @@ Paste this into your `styles.less` to fit more rows on screen:
 
 ```less
 .jupyter-explorer {
-  .data-explorer-canvas-wrap {
+  .explorer-canvas-wrap {
     font-size: 0.9em;
   }
 }

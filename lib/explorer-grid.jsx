@@ -188,18 +188,18 @@ class CanvasGrid {
       const value = cs.getPropertyValue(name).trim();
       return value || fallback;
     };
-    this.colorText = v("--de-grid-text", cs.color || "#ccc");
-    this.colorMuted = v("--de-grid-muted", this.colorText);
-    this.colorBorder = v("--de-grid-border", "rgba(128,128,128,0.3)");
-    this.headerBg = v("--de-grid-header-bg", "rgba(128,128,128,0.15)");
-    this.selectionFill = v("--de-grid-selection", "rgba(80,140,255,0.25)");
-    this.flashFill = v("--de-grid-flash", "rgba(80,140,255,0.35)");
+    this.colorText = v("--explorer-grid-text", cs.color || "#ccc");
+    this.colorMuted = v("--explorer-grid-muted", this.colorText);
+    this.colorBorder = v("--explorer-grid-border", "rgba(128,128,128,0.3)");
+    this.headerBg = v("--explorer-grid-header-bg", "rgba(128,128,128,0.15)");
+    this.selectionFill = v("--explorer-grid-selection", "rgba(80,140,255,0.25)");
+    this.flashFill = v("--explorer-grid-flash", "rgba(80,140,255,0.35)");
     // Tint applied to the index / header of rows / columns covered by the
     // current selection, so the selected row / column ids stand out.
-    this.headerSelectionFill = v("--de-grid-header-selection", "rgba(80,140,255,0.15)");
+    this.headerSelectionFill = v("--explorer-grid-header-selection", "rgba(80,140,255,0.15)");
     // Search (search-panel) match highlights: all matches vs the current one.
-    this.searchMatchFill = v("--de-grid-search", "rgba(240,200,0,0.30)");
-    this.searchCurrentFill = v("--de-grid-search-current", "rgba(240,160,0,0.55)");
+    this.searchMatchFill = v("--explorer-grid-search", "rgba(240,200,0,0.30)");
+    this.searchCurrentFill = v("--explorer-grid-search-current", "rgba(240,160,0,0.55)");
   }
 
   _paletteSignature() {
@@ -1063,7 +1063,7 @@ class CanvasGrid {
     return (
       <div
         ref="wrap"
-        className="data-explorer-canvas-wrap"
+        className="explorer-canvas-wrap"
         tabIndex={0}
         onScroll={this.handleScroll}
         onMouseDown={this.handleMouseDown}
@@ -1072,8 +1072,8 @@ class CanvasGrid {
         onFocus={this.handleFocus}
         onBlur={this.handleBlur}
       >
-        <div ref="sizer" className="data-explorer-canvas-sizer" />
-        <canvas ref="canvas" className="data-explorer-canvas" />
+        <div ref="sizer" className="explorer-canvas-sizer" />
+        <canvas ref="canvas" className="explorer-canvas" />
       </div>
     );
   }
@@ -1083,32 +1083,32 @@ class CanvasGrid {
  * Render the explorer's payload: the grid for anything tabular, and the value's
  * repr for anything else.
  */
-function renderDataExplorerGrid(des) {
-  const payload = des.payload;
+function renderExplorerGrid(store) {
+  const payload = store.payload;
   if (!payload) {
     return null;
   }
   if (!Array.isArray(payload.rows) || !Array.isArray(payload.columns)) {
     return (
-      <div className="data-explorer-scalar native-key-bindings" tabIndex={0}>
+      <div className="explorer-scalar native-key-bindings" tabIndex={0}>
         <pre>{payload.repr || "No tabular representation"}</pre>
       </div>
     );
   }
   return (
     <CanvasGrid
-      ref={des.setActiveGrid}
+      ref={store.setActiveGrid}
       payload={payload}
       navMeta={payload.navmeta}
-      onDrill={(r, state) => des.drillInto(r, state)}
-      restoreState={des.pendingRestore}
-      onRestored={() => des.clearPendingRestore()}
-      selectedRow={des.selectedRow}
-      searchMatches={des.searchMatches}
-      searchCurrentIndex={des.searchCurrentIndex}
-      onClearSelected={() => des.setSelectedRow(null)}
+      onDrill={(r, state) => store.drillInto(r, state)}
+      restoreState={store.pendingRestore}
+      onRestored={() => store.clearPendingRestore()}
+      selectedRow={store.selectedRow}
+      searchMatches={store.searchMatches}
+      searchCurrentIndex={store.searchCurrentIndex}
+      onClearSelected={() => store.setSelectedRow(null)}
     />
   );
 }
 
-module.exports = { CanvasGrid, renderDataExplorerGrid };
+module.exports = { CanvasGrid, renderExplorerGrid };

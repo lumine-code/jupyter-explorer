@@ -1,6 +1,6 @@
 const etch = require("@lumine-code/etch");
-const DataExplorer = require("../lib/data-explorer");
-const { DataExplorerStore } = require("../lib/data-explorer-store");
+const Explorer = require("../lib/explorer");
+const { ExplorerStore } = require("../lib/explorer-store");
 
 // The panel moved off React, where several of its pieces were function
 // components. Etch calls a function tag with `new` and reads `.element` off the
@@ -36,8 +36,8 @@ describe("data explorer", () => {
   let component;
 
   beforeEach(() => {
-    store = new DataExplorerStore();
-    component = new DataExplorer({ des: store });
+    store = new ExplorerStore();
+    component = new Explorer({ store: store });
   });
 
   afterEach(() => {
@@ -45,7 +45,7 @@ describe("data explorer", () => {
     component = null;
   });
 
-  const body = () => component.element.querySelector(".data-explorer-body");
+  const body = () => component.element.querySelector(".explorer-body");
 
   it("asks for an expression before anything is loaded", () => {
     flush(component);
@@ -54,9 +54,9 @@ describe("data explorer", () => {
 
   it("renders the toolbar and the expression editor", () => {
     flush(component);
-    expect(component.element.querySelectorAll(".data-explorer-view-toggle .btn").length).toBe(4);
+    expect(component.element.querySelectorAll(".explorer-view-toggle .btn").length).toBe(4);
     expect(
-      component.element.querySelector("atom-text-editor.data-explorer-expression"),
+      component.element.querySelector("atom-text-editor.explorer-expression"),
     ).toBeTruthy();
   });
 
@@ -64,15 +64,15 @@ describe("data explorer", () => {
     store.setPayload(tabularPayload());
     flush(component);
 
-    expect(component.element.querySelector(".data-explorer-canvas")).toBeTruthy();
-    expect(component.element.querySelector(".data-explorer-canvas-wrap")).toBeTruthy();
+    expect(component.element.querySelector(".explorer-canvas")).toBeTruthy();
+    expect(component.element.querySelector(".explorer-canvas-wrap")).toBeTruthy();
   });
 
   it("falls back to the repr when the value is not tabular", () => {
     store.setPayload({ kind: "scalar", name: "x", repr: "42" });
     flush(component);
 
-    expect(component.element.querySelector(".data-explorer-scalar").textContent).toContain("42");
+    expect(component.element.querySelector(".explorer-scalar").textContent).toContain("42");
   });
 
   it("switches to every view without losing the grid", () => {
@@ -84,7 +84,7 @@ describe("data explorer", () => {
       flush(component);
 
       // The grid stays mounted and is hidden, so switching back is cheap.
-      const grid = component.element.querySelector(".data-explorer-grid-view");
+      const grid = component.element.querySelector(".explorer-grid-view");
       expect(grid).toBeTruthy();
       expect(grid.classList.contains("is-hidden")).toBe(view !== "grid");
     }
@@ -95,7 +95,7 @@ describe("data explorer", () => {
     store.setViewMode("summary");
     flush(component);
 
-    const table = component.element.querySelector(".data-explorer-alt-view .data-explorer-table");
+    const table = component.element.querySelector(".explorer-alt-view .explorer-table");
     expect(table).toBeTruthy();
     expect(table.querySelectorAll("tbody tr").length).toBe(2);
   });
@@ -107,7 +107,7 @@ describe("data explorer", () => {
 
     // These were function components under React; as tags they would render
     // nothing and take the whole patch down with them.
-    const controls = component.element.querySelectorAll(".data-explorer-control");
+    const controls = component.element.querySelectorAll(".explorer-control");
     expect(controls.length).toBeGreaterThan(0);
   });
 
@@ -122,7 +122,7 @@ describe("data explorer", () => {
     store.setPayload({ ...tabularPayload(), truncated: true, total_rows: 999 });
     flush(component);
 
-    expect(component.element.querySelector(".data-explorer-pager").textContent).toContain(
+    expect(component.element.querySelector(".explorer-pager").textContent).toContain(
       "of 999 rows",
     );
   });

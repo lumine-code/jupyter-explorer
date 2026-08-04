@@ -34,7 +34,7 @@
   "providedServices": {
     "jupyter.explorer": {
       "versions": {
-        "1.0.0": "provideDataExplorer"
+        "1.0.0": "provideExplorer"
       }
     },
     "search.adapter": {

@@ -1,9 +1,9 @@
 const etch = require("@lumine-code/etch");
-const { INDEX_COLUMN } = require("./data-explorer-store");
-const { renderDataExplorerGrid } = require("./data-explorer-grid");
+const { INDEX_COLUMN } = require("./explorer-store");
+const { renderExplorerGrid } = require("./explorer-grid");
 const { autocompleteConsumer: AutocompleteConsumer } = require("./autocomplete");
 
-// View modes, inspired by the nteract data-explorer's view toolbar. "grid" and
+// View modes, inspired by the nteract explorer's view toolbar. "grid" and
 // "summary" are tabular; the rest are Plotly charts.
 const VIEWS = [
   { id: "grid", label: "Grid", icon: "icon-list-unordered" },
@@ -32,7 +32,7 @@ const VIEW_SPEC = {
  * never overlaps the header controls.
  */
 function renderMessage(children) {
-  return <div className="data-explorer-message">{children}</div>;
+  return <div className="explorer-message">{children}</div>;
 }
 
 function clearExpressionOrAbortMultiCursor(editor, onChange, event) {
@@ -55,13 +55,13 @@ function formatCell(value) {
 }
 
 // Small footer note shown when the kernel capped the number of fetched rows.
-function renderGridFooter({ des }) {
-  const payload = des.payload;
+function renderGridFooter({ store }) {
+  const payload = store.payload;
   if (!payload || !payload.truncated) {
     return null;
   }
   return (
-    <div className="data-explorer-pager">
+    <div className="explorer-pager">
       <span className="output-truncated">
         showing first {payload.rows.length} of {payload.total_rows} rows
       </span>
@@ -525,7 +525,7 @@ class ResponsivePlot {
     if (this.error) {
       return renderMessage("Could not render this plot. Try different axes or another view.");
     }
-    return <div ref="container" className="data-explorer-plotly" />;
+    return <div ref="container" className="explorer-plotly" />;
   }
 }
 
@@ -534,9 +534,9 @@ class ResponsivePlot {
 // compress that plot axis.
 function renderAxisSelect({ label, value, options, optional, onChange, axisKey, onStretch }) {
   return (
-    <div className="data-explorer-control">
-      <span className="data-explorer-control-label">{label}</span>
-      <div className="data-explorer-axis-group">
+    <div className="explorer-control">
+      <span className="explorer-control-label">{label}</span>
+      <div className="explorer-axis-group">
         {onStretch ? (
           <>
             <button
@@ -574,8 +574,8 @@ function renderAxisSelect({ label, value, options, optional, onChange, axisKey, 
   );
 }
 
-function renderChartControls({ des, view, onStretch }) {
-  const payload = des.payload;
+function renderChartControls({ store, view, onStretch }) {
+  const payload = store.payload;
   const spec = VIEW_SPEC[view] || {};
   const numeric = payload.numeric_columns || [];
   const categorical = payload.columns.filter((c) => !numeric.includes(c));
@@ -585,14 +585,14 @@ function renderChartControls({ des, view, onStretch }) {
   const categoricalOptions = categorical.map((c) => ({ value: c, label: c }));
 
   return (
-    <div className="data-explorer-plot-controls">
+    <div className="explorer-plot-controls">
       {spec.x
         ? renderAxisSelect({
             label: spec.xLabel || "X",
-            value: des.xColumn,
+            value: store.xColumn,
             options: allOptions,
             optional: spec.xOptional,
-            onChange: des.setXColumn,
+            onChange: store.setXColumn,
             axisKey: "xaxis",
             onStretch: onStretch,
           })
@@ -601,9 +601,9 @@ function renderChartControls({ des, view, onStretch }) {
       {spec.y
         ? renderAxisSelect({
             label: spec.yLabel || "Y",
-            value: des.yColumn,
+            value: store.yColumn,
             options: columnOptions,
-            onChange: des.setYColumn,
+            onChange: store.setYColumn,
             axisKey: "yaxis",
             onStretch: onStretch,
           })
@@ -612,10 +612,10 @@ function renderChartControls({ des, view, onStretch }) {
       {spec.z
         ? renderAxisSelect({
             label: "Z",
-            value: des.zColumn,
+            value: store.zColumn,
             options: columnOptions,
             optional: true,
-            onChange: des.setZColumn,
+            onChange: store.setZColumn,
             axisKey: "zaxis",
             onStretch: onStretch,
           })
@@ -624,24 +624,24 @@ function renderChartControls({ des, view, onStretch }) {
       {spec.color && categorical.length > 0
         ? renderAxisSelect({
             label: "Color",
-            value: des.colorColumn,
+            value: store.colorColumn,
             options: categoricalOptions,
             optional: true,
-            onChange: des.setColorColumn,
+            onChange: store.setColorColumn,
           })
         : null}
 
       {spec.metrics ? (
-        <div className="data-explorer-control data-explorer-ycols">
+        <div className="explorer-control explorer-ycols">
           <span>Dimensions</span>
-          <div className="data-explorer-ycol-list">
+          <div className="explorer-ycol-list">
             {numeric.map((col) => (
               <label key={col} className="input-label">
                 <input
                   className="input-checkbox"
                   type="checkbox"
-                  checked={des.yColumns.includes(col)}
-                  onChange={() => des.toggleYColumn(col)}
+                  checked={store.yColumns.includes(col)}
+                  onChange={() => store.toggleYColumn(col)}
                 />
                 <span>{col}</span>
               </label>
@@ -654,8 +654,8 @@ function renderChartControls({ des, view, onStretch }) {
 }
 
 // The plot body only; axis controls live in the header (ChartControls).
-function renderChartPlot({ des, view, plotRef, onPointClick }) {
-  const payload = des.payload;
+function renderChartPlot({ store, view, plotRef, onPointClick }) {
+  const payload = store.payload;
   if (!payload || !Array.isArray(payload.columns) || payload.columns.length === 0) {
     return renderMessage("No columns available to plot");
   }
@@ -668,25 +668,25 @@ function renderChartPlot({ des, view, plotRef, onPointClick }) {
   }
 
   const axes = {
-    x: des.xColumn,
-    y: des.yColumn,
-    z: des.zColumn,
-    color: des.colorColumn,
-    metrics: des.yColumns,
+    x: store.xColumn,
+    y: store.yColumn,
+    z: store.zColumn,
+    color: store.colorColumn,
+    metrics: store.yColumns,
   };
 
   // Readiness: views that need a Y axis require it; parallel needs >=1 metric.
-  const ready = spec.metrics ? des.yColumns.length > 0 : !spec.y || Boolean(des.yColumn);
+  const ready = spec.metrics ? store.yColumns.length > 0 : !spec.y || Boolean(store.yColumn);
   const figure = ready ? buildFigure(payload, view, axes) : null;
 
   // Remount Plotly when the chart type or its dimensionality changes so 2D<->3D
   // switches do a clean newPlot instead of a redraw with stale axes.
-  const threeD = is3D(view, des.zColumn);
+  const threeD = is3D(view, store.zColumn);
   const plotKey = `${view}-${threeD ? "3d" : "2d"}`;
 
   return (
-    <div className="data-explorer-plot" tabIndex={0}>
-      <div className="data-explorer-plot-area">
+    <div className="explorer-plot" tabIndex={0}>
+      <div className="explorer-plot-area">
         {figure ? (
           <ResponsivePlot
             ref={plotRef}
@@ -705,17 +705,17 @@ function renderChartPlot({ des, view, plotRef, onPointClick }) {
   );
 }
 
-function renderSummaryView({ des }) {
-  const summary = des.payload && des.payload.summary;
+function renderSummaryView({ store }) {
+  const summary = store.payload && store.payload.summary;
   if (!summary || !Array.isArray(summary.rows)) {
     return renderMessage("No summary statistics available for this data");
   }
   return (
-    <div className="data-explorer-table-wrapper native-key-bindings" tabIndex={0}>
-      <table className="data-explorer-table">
+    <div className="explorer-table-wrapper native-key-bindings" tabIndex={0}>
+      <table className="explorer-table">
         <thead>
           <tr>
-            <th className="data-explorer-index-head"></th>
+            <th className="explorer-index-head"></th>
             {summary.stats.map((s, i) => (
               <th key={i}>{s}</th>
             ))}
@@ -724,7 +724,7 @@ function renderSummaryView({ des }) {
         <tbody>
           {summary.rows.map((row, r) => (
             <tr key={r}>
-              <td className="data-explorer-index-cell">{summary.index[r]}</td>
+              <td className="explorer-index-cell">{summary.index[r]}</td>
               {row.map((cell, c) => (
                 <td key={c}>{formatCell(cell)}</td>
               ))}
@@ -739,22 +739,22 @@ function renderSummaryView({ des }) {
 // Drill-down trail. Each segment re-evaluates its stored expression; the last
 // segment is the current level (non-clickable). Only shown once the user has
 // drilled at least one level deep.
-function renderBreadcrumb({ des }) {
-  const path = des.path;
+function renderBreadcrumb({ store }) {
+  const path = store.path;
   if (!Array.isArray(path) || path.length <= 1) {
     return null;
   }
   return (
-    <div className="data-explorer-breadcrumb">
+    <div className="explorer-breadcrumb">
       {path.map((segment, i) => (
         <>
-          {i > 0 ? <span className="data-explorer-breadcrumb-sep">›</span> : null}
+          {i > 0 ? <span className="explorer-breadcrumb-sep">›</span> : null}
           <button
             type="button"
-            className="data-explorer-breadcrumb-item"
+            className="explorer-breadcrumb-item"
             disabled={i === path.length - 1}
             title={segment.expression}
-            onClick={() => des.navigateTo(i)}
+            onClick={() => store.navigateTo(i)}
           >
             {segment.label}
           </button>
@@ -764,14 +764,14 @@ function renderBreadcrumb({ des }) {
   );
 }
 
-function renderViewToolbar({ des }) {
+function renderViewToolbar({ store }) {
   return (
-    <div className="btn-group data-explorer-view-toggle">
+    <div className="btn-group explorer-view-toggle">
       {VIEWS.map((v) => (
         <button
           key={v.id}
-          className={`btn icon ${v.icon} ${des.viewMode === v.id ? "selected" : ""}`}
-          onClick={() => des.setViewMode(v.id)}
+          className={`btn icon ${v.icon} ${store.viewMode === v.id ? "selected" : ""}`}
+          onClick={() => store.setViewMode(v.id)}
         >
           {v.label}
         </button>
@@ -806,17 +806,17 @@ function payloadMeta(payload) {
   return { kind, detail: details.join(" | ") };
 }
 
-function renderPayloadMeta({ des, view }) {
-  const payload = des.payload;
+function renderPayloadMeta({ store, view }) {
+  const payload = store.payload;
   if (!payload || view !== "grid") {
     return null;
   }
   const meta = payloadMeta(payload);
   return (
-    <div className="data-explorer-object-meta">
-      <span className="data-explorer-object-type">{meta.kind}</span>
-      <span className="data-explorer-object-repr">{meta.detail}</span>
-      {des.loading ? <span className="loading loading-spinner-tiny" /> : null}
+    <div className="explorer-object-meta">
+      <span className="explorer-object-type">{meta.kind}</span>
+      <span className="explorer-object-repr">{meta.detail}</span>
+      {store.loading ? <span className="loading loading-spinner-tiny" /> : null}
     </div>
   );
 }
@@ -840,7 +840,7 @@ class ExpressionEditor {
       lineNumberGutterVisible: false,
       placeholderText: "Expression to load (e.g. df)",
     });
-    this.editor.element.classList.add("data-explorer-expression");
+    this.editor.element.classList.add("explorer-expression");
     if (this.props.grammar) {
       atom.grammars.assignLanguageMode(this.editor.getBuffer(), this.props.grammar.scopeName);
     }
@@ -890,24 +890,24 @@ class ExpressionEditor {
   }
 
   render() {
-    return <div className="data-explorer-expression-editor" />;
+    return <div className="explorer-expression-editor" />;
   }
 }
 
-class DataExplorer {
+class Explorer {
   constructor(props) {
     this.props = props;
     etch.initialize(this);
     this.didMount();
-    this.storeSubscription = this.props.des.onDidUpdate(() => this.update());
+    this.storeSubscription = this.props.store.onDidUpdate(() => this.update());
   }
 
   didMount() {
-    this._lastFocusToken = this.props.des.focusToken;
+    this._lastFocusToken = this.props.store.focusToken;
     this._bodyCommands = atom.commands.add(this.refs.body, {
       "jupyter-explorer:focus-expression": () => this.focusExpression(),
       "jupyter-explorer:focus-toolbar": () => this.focusToolbar(),
-      "jupyter-explorer:drill-up": () => this.props.des.drillUp(),
+      "jupyter-explorer:drill-up": () => this.props.store.drillUp(),
     });
     this._toolbarCommands = atom.commands.add(this.refs.toolbar, {
       "jupyter-explorer:toolbar-left": (event) => this.focusToolbarItem(event, -1),
@@ -926,9 +926,9 @@ class DataExplorer {
   }
 
   didUpdate() {
-    const des = this.props.des;
-    if (des.focusToken !== this._lastFocusToken && !des.loading && des.payload) {
-      this._lastFocusToken = des.focusToken;
+    const store = this.props.store;
+    if (store.focusToken !== this._lastFocusToken && !store.loading && store.payload) {
+      this._lastFocusToken = store.focusToken;
       requestAnimationFrame(() => this.focusBody());
     }
   }
@@ -964,7 +964,7 @@ class DataExplorer {
     }
 
     const target =
-      toolbar.querySelector(".data-explorer-view-toggle .btn.selected") ||
+      toolbar.querySelector(".explorer-view-toggle .btn.selected") ||
       this.getToolbarItems()[0] ||
       toolbar;
     target.focus?.({ preventScroll: true });
@@ -1013,10 +1013,10 @@ class DataExplorer {
     }
 
     const target =
-      body.querySelector(".data-explorer-grid-view:not(.is-hidden) .data-explorer-canvas-wrap") ||
-      body.querySelector(".data-explorer-grid-view:not(.is-hidden) .data-explorer-scalar") ||
-      body.querySelector(".data-explorer-table-wrapper") ||
-      body.querySelector(".data-explorer-plot") ||
+      body.querySelector(".explorer-grid-view:not(.is-hidden) .explorer-canvas-wrap") ||
+      body.querySelector(".explorer-grid-view:not(.is-hidden) .explorer-scalar") ||
+      body.querySelector(".explorer-table-wrapper") ||
+      body.querySelector(".explorer-plot") ||
       body;
     target.focus?.({ preventScroll: true });
   };
@@ -1028,12 +1028,12 @@ class DataExplorer {
   };
 
   handlePointClick = (rowIndex) => {
-    const des = this.props.des;
-    des.setSelectedRow(rowIndex);
-    des.setViewMode("grid");
+    const store = this.props.store;
+    store.setSelectedRow(rowIndex);
+    store.setViewMode("grid");
   };
 
-  renderBody(des, view, isChart) {
+  renderBody(store, view, isChart) {
     // One message at most; rendered as a keyed sibling of the data slots
     // rather than replacing them. The body's child used to swap between this
     // fragment and a bare message div, and a fragment replaced by a non-
@@ -1041,15 +1041,15 @@ class DataExplorer {
     // died in insertBefore. The fragment is permanent now; only its keyed
     // children come and go.
     let message = null;
-    if (des.loading && !des.payload) {
+    if (store.loading && !store.payload) {
       // Only the very first load has nothing to show. A reload or a drill
       // keeps the current table on screen — swapping it for a loading screen
       // reads as a flicker when the kernel answers quickly; the toolbar
       // spinner is the loading cue instead.
       message = renderMessage("Loading...");
-    } else if (des.error) {
-      message = renderMessage(<span className="text-error">{des.error}</span>);
-    } else if (!des.payload) {
+    } else if (store.error) {
+      message = renderMessage(<span className="text-error">{store.error}</span>);
+    } else if (!store.payload) {
       message = renderMessage([
         <div>No data loaded.</div>,
         <div className="text-subtle">
@@ -1067,26 +1067,26 @@ class DataExplorer {
     // insertBefore on a later update. Contents may come and go; slots do not.
     return (
       <>
-        <div key="message" className={`data-explorer-message-view${message ? "" : " is-hidden"}`}>
+        <div key="message" className={`explorer-message-view${message ? "" : " is-hidden"}`}>
           {message}
         </div>
         {/* Grid stays mounted and is just hidden when another view is
             active, so switching back doesn't rebuild the whole table. */}
         <div
           key="grid"
-          className={`data-explorer-grid-view${hasData && view === "grid" ? "" : " is-hidden"}`}
+          className={`explorer-grid-view${hasData && view === "grid" ? "" : " is-hidden"}`}
         >
-          {hasData ? renderDataExplorerGrid(des) : null}
-          {hasData ? renderGridFooter({ des }) : null}
+          {hasData ? renderExplorerGrid(store) : null}
+          {hasData ? renderGridFooter({ store }) : null}
         </div>
         <div
           key="alt"
-          className={`data-explorer-alt-view${hasData && (view === "summary" || isChart) ? "" : " is-hidden"}`}
+          className={`explorer-alt-view${hasData && (view === "summary" || isChart) ? "" : " is-hidden"}`}
         >
-          {hasData && view === "summary" ? renderSummaryView({ des }) : null}
+          {hasData && view === "summary" ? renderSummaryView({ store }) : null}
           {hasData && isChart
             ? renderChartPlot({
-                des,
+                store,
                 view,
                 plotRef: (component) => {
                   this.plot = component;
@@ -1100,44 +1100,44 @@ class DataExplorer {
   }
 
   render() {
-    // Singleton store, fed explicitly via the data-explorer command / Variable
+    // Singleton store, fed explicitly via the explorer command / Variable
     // Explorer. It is intentionally decoupled from store.kernel so switching the
     // focused editor never re-renders or reloads the panel.
-    const des = this.props.des;
-    const view = des.viewMode;
+    const store = this.props.store;
+    const view = store.viewMode;
     const isChart = view !== "grid" && view !== "summary";
-    const hasTable = des.payload && Array.isArray(des.payload.columns);
+    const hasTable = store.payload && Array.isArray(store.payload.columns);
 
     return (
-      <div className="data-explorer" tabIndex={-1}>
-        <div className="data-explorer-controls">
-          <div className="data-explorer-expression">
+      <div className="explorer" tabIndex={-1}>
+        <div className="explorer-controls">
+          <div className="explorer-expression">
             <ExpressionEditor
               ref="expression"
-              value={des.expression}
-              onChange={des.setExpression}
-              onConfirm={des.loadExpression}
-              grammar={des.kernel && des.kernel.grammar}
+              value={store.expression}
+              onChange={store.setExpression}
+              onConfirm={store.loadExpression}
+              grammar={store.kernel && store.kernel.grammar}
               onFocusToolbar={this.focusToolbar}
               onFocusBody={this.focusBody}
             />
           </div>
-          <div className="data-explorer-toolbar-row" ref="toolbar" tabIndex={0}>
-            {renderViewToolbar({ des })}
-            {renderBreadcrumb({ des })}
-            {renderPayloadMeta({ des, view })}
+          <div className="explorer-toolbar-row" ref="toolbar" tabIndex={0}>
+            {renderViewToolbar({ store })}
+            {renderBreadcrumb({ store })}
+            {renderPayloadMeta({ store, view })}
             {isChart && hasTable
-              ? renderChartControls({ des, view, onStretch: this.handleStretch })
+              ? renderChartControls({ store, view, onStretch: this.handleStretch })
               : null}
           </div>
         </div>
 
-        <div className="data-explorer-body" ref="body" tabIndex={0}>
-          {this.renderBody(des, view, isChart)}
+        <div className="explorer-body" ref="body" tabIndex={0}>
+          {this.renderBody(store, view, isChart)}
         </div>
       </div>
     );
   }
 }
 
-module.exports = DataExplorer;
+module.exports = Explorer;

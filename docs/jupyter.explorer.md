@@ -17,7 +17,7 @@ This exists so a package that already knows about a value — a variables panel 
 "consumedServices": {
   "jupyter.explorer": {
     "versions": {
-      "^1.0.0": "consumeDataExplorer"
+      "^1.0.0": "consumeJupyterExplorer"
     }
   }
 }
@@ -26,7 +26,7 @@ This exists so a package that already knows about a value — a variables panel 
 ## Contract
 
 ```ts
-type DataExplorerService = {
+type ExplorerService = {
   explore(kernel: JupyterKernel, expression: string): Promise<object>;
 };
 ```
@@ -45,17 +45,17 @@ Required members:
 const { Disposable } = require("atom");
 
 module.exports = {
-  consumeDataExplorer(service) {
-    this.dataExplorer = service;
+  consumeJupyterExplorer(service) {
+    this.explorer = service;
     return new Disposable(() => {
-      this.dataExplorer = null;
+      this.explorer = null;
     });
   },
 
   explore(kernel, name) {
     // Absent service means the package is not installed; offer nothing rather
     // than failing, since this is a convenience, not a dependency.
-    this.dataExplorer?.explore(kernel, name);
+    this.explorer?.explore(kernel, name);
   },
 };
 ```
