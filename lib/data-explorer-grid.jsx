@@ -148,6 +148,15 @@ class CanvasGrid {
       this.readTheme();
       this.computeLayout();
       this.handleResize();
+      // Stepping back to a level re-uses this mounted grid (the body keeps it
+      // on screen through the reload), so the position saved when the level
+      // was left has to be applied here — didMount only covers a fresh grid.
+      // After computeLayout: the sizer must be at full size again before the
+      // saved scroll offsets can stick.
+      if (this.props.restoreState) {
+        this.restoreState(this.props.restoreState);
+        this.props.onRestored?.();
+      }
     }
     if (prev.selectedRow !== this.props.selectedRow) {
       this.scrollToSelected();
