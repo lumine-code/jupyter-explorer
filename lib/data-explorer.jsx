@@ -849,6 +849,10 @@ class ExpressionEditor {
     this.element.appendChild(this.editor.element);
     AutocompleteConsumer.watchPanelEditor(this.editor);
     this._changeDisposable = this.editor.onDidChange(() => {
+      // Programmatic setText in update() must not echo back into the store:
+      // the emit would re-enter the parent's patch that is applying the very
+      // change being echoed.
+      if (this._settingText) return;
       this.props.onChange(this.editor.getText());
     });
     this._commands = atom.commands.add(this.editor.element, {
@@ -863,7 +867,12 @@ class ExpressionEditor {
   update(props) {
     this.props = props;
     if (this.editor && this.editor.getText() !== props.value) {
-      this.editor.setText(props.value || "");
+      this._settingText = true;
+      try {
+        this.editor.setText(props.value || "");
+      } finally {
+        this._settingText = false;
+      }
     }
     return etch.update(this);
   }
@@ -1024,36 +1033,50 @@ class DataExplorer {
   };
 
   renderBody(des, view, isChart) {
+    // One message at most; rendered as a keyed sibling of the data slots
+    // rather than replacing them. The body's child used to swap between this
+    // fragment and a bare message div, and a fragment replaced by a non-
+    // fragment and back corrupts etch's child bookkeeping — the second swap
+    // died in insertBefore. The fragment is permanent now; only its keyed
+    // children come and go.
+    let message = null;
     if (des.loading) {
-      return renderMessage("Loading...");
-    }
-    if (des.error) {
-      return renderMessage(<span className="text-error">{des.error}</span>);
-    }
-    if (!des.payload) {
-      return renderMessage([
+      message = renderMessage("Loading...");
+    } else if (des.error) {
+      message = renderMessage(<span className="text-error">{des.error}</span>);
+    } else if (!des.payload) {
+      message = renderMessage([
         <div>No data loaded.</div>,
         <div className="text-subtle">
-          Put the cursor on a variable (or select an expression) and run "Data Explorer", or use
-          Variables.
+          Put the cursor on a variable (or select an expression) and run “jupyter-explorer:explore”,
+          or use Variables.
         </div>,
       ]);
     }
+    const hasData = !message;
 
-    // Keys on each slot: the second slot switches between the summary, a chart
-    // and nothing, and without a key the diff cannot tell a replacement from a
-    // move and leaves the body stale.
+    // The slot list is CONSTANT: three keyed divs that are always present and
+    // hide via a class. Adding or removing a keyed child next to keyed
+    // siblings — and swapping the whole fragment for a message div, which is
+    // what this body did first — both corrupt etch's keyed diff and die in
+    // insertBefore on a later update. Contents may come and go; slots do not.
     return (
       <>
+        <div key="message" className={`data-explorer-message-view${message ? "" : " is-hidden"}`}>
+          {message}
+        </div>
         {/* Grid stays mounted and is just hidden when another view is
             active, so switching back doesn't rebuild the whole table. */}
-        <div key="grid" className={`data-explorer-grid-view${view === "grid" ? "" : " is-hidden"}`}>
-          {renderDataExplorerGrid(des)}
-          {renderGridFooter({ des })}
+        <div
+          key="grid"
+          className={`data-explorer-grid-view${hasData && view === "grid" ? "" : " is-hidden"}`}
+        >
+          {hasData ? renderDataExplorerGrid(des) : null}
+          {hasData ? renderGridFooter({ des }) : null}
         </div>
         <div key="alt" className="data-explorer-alt-view">
-          {view === "summary" ? renderSummaryView({ des }) : null}
-          {isChart
+          {hasData && view === "summary" ? renderSummaryView({ des }) : null}
+          {hasData && isChart
             ? renderChartPlot({
                 des,
                 view,

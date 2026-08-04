@@ -200,6 +200,15 @@
     outline: none;
   }
 
+  .data-explorer-message-view {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
   /* Grid stays mounted so switching views doesn't rebuild it; hidden when
      another view is active. */
   .data-explorer-grid-view {
