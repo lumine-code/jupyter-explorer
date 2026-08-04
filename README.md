@@ -24,7 +24,7 @@ It reads its kernels from [`jupyter-repl`](https://github.com/lumine-code/jupyte
 Commands available in `atom-workspace`:
 
 - `jupyter-explorer:explore`: explore the expression under the cursor,
-- `jupyter-explorer:open`: open the panel on whatever it last showed.
+- `jupyter-explorer:open`: open the panel — an empty one picks up the active kernel and the expression under the cursor.
 
 Commands available in `.data-explorer-body`, `.data-explorer-toolbar-row` and the expression editor:
 

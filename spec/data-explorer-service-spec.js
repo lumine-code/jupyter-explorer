@@ -50,6 +50,30 @@ describe("jupyter.explorer", () => {
     main.deactivate();
   });
 
+  it("open picks up the cursor context the old command used to", async () => {
+    main.activate();
+    const kernel = fakeKernel();
+    main.consumeJupyterKernel(fakeProvider(kernel, "df.head()"));
+
+    await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
+
+    expect(dataExplorerStore.kernel).toBe(kernel);
+    expect(dataExplorerStore.expression).toBe("df.head()");
+    main.deactivate();
+  });
+
+  it("open with no expression still binds the kernel, so the editor works", async () => {
+    main.activate();
+    const kernel = fakeKernel();
+    main.consumeJupyterKernel(fakeProvider(kernel, ""));
+
+    await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
+
+    expect(dataExplorerStore.kernel).toBe(kernel);
+    expect(dataExplorerStore.expression).toBe("");
+    main.deactivate();
+  });
+
   it("reports the kernel it is showing to whoever asks the pane item", async () => {
     main.activate();
     const kernel = fakeKernel();
