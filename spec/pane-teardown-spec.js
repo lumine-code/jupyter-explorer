@@ -4,7 +4,7 @@ const DataExplorerPane = require("../lib/data-explorer-pane");
 // service destroys the item directly rather than through `pane.destroyItem`,
 // which would otherwise leave the tab behind holding an emptied element.
 
-describe("data explorer pane teardown", () => {
+describe("jupyter-explorer pane teardown", () => {
   it("leaves no tab behind when destroyed directly", () => {
     const item = new DataExplorerPane();
     const pane = atom.workspace.getCenter().getActivePane();

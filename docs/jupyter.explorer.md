@@ -1,6 +1,6 @@
 # jupyter.explorer
 
-Hand a kernel and an expression to the Data Explorer and let it open on the result.
+Hand a kernel and an expression to jupyter-explorer and let it open on the result.
 
 |             |                                                      |
 | ----------- | ---------------------------------------------------- |

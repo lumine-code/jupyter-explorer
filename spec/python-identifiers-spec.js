@@ -61,11 +61,11 @@ describe("generated Python helper code", () => {
     dataExplorerStore.reset();
   });
 
-  it("names the data explorer serializer with a valid identifier", () => {
+  it("names the serializer with a valid identifier", () => {
     expectValidPythonIdentifiers(buildSerializerCode("df"));
   });
 
-  it("sends the data explorer valid identifiers for a real expression", () => {
+  it("sends the serializer valid identifiers for a real expression", () => {
     const captured = [];
     dataExplorerStore.load(recordingKernel(captured), "df");
 

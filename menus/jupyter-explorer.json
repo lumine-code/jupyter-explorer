@@ -4,14 +4,14 @@
       "label": "Packages",
       "submenu": [
         {
-          "label": "Jupyter Data Explorer",
+          "label": "Jupyter Explorer",
           "submenu": [
             {
               "label": "Explore Under Cursor",
               "command": "jupyter-explorer:explore"
             },
             {
-              "label": "Open Data Explorer",
+              "label": "Open Explorer",
               "command": "jupyter-explorer:open"
             }
           ]
