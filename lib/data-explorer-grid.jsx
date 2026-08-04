@@ -1,4 +1,21 @@
 const etch = require("@lumine-code/etch");
+const { CompositeDisposable } = require("atom");
+
+// Batch a burst of synchronous calls into one, at the end of the task that
+// raised them (a theme switch attaches several stylesheets back to back). The
+// microtask still runs before the next paint, so a repaint triggered from
+// within a theme switch's View Transition is part of the cross-fade.
+function coalesce(callback) {
+  let scheduled = false;
+  return () => {
+    if (scheduled) return;
+    scheduled = true;
+    queueMicrotask(() => {
+      scheduled = false;
+      callback();
+    });
+  };
+}
 
 // Horizontal cell padding (px), and the clamp on auto-measured column widths.
 const PAD_X = 8;
@@ -50,17 +67,17 @@ class CanvasGrid {
     this.computeLayout();
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
     this.resizeObserver.observe(this.refs.wrap);
-    this._themeDisposable = atom.themes.onDidChangeActiveThemes(() => {
-      // Themes reload asynchronously; re-read colors/fonts on the next tick.
-      setTimeout(() => {
-        if (!this.refs.wrap) {
-          return;
-        }
-        this.readTheme();
-        this.computeLayout();
-        this.handleResize();
-      }, 0);
-    });
+    // Repaint a restyled window from within its cross-fade (see scrollmap for
+    // the pattern). A theme switch attaches its stylesheets from inside a View
+    // Transition and `onDidAddStyleElement` is emitted synchronously as each
+    // one lands — early enough for the repaint to be part of the cross-fade;
+    // `onDidChangeActiveThemes` only fires at the very end, but it is the one
+    // signal a day/night variant switch through `updateAppearance` gives.
+    const updateTheme = coalesce(() => this.updateTheme());
+    this._themeDisposable = new CompositeDisposable(
+      atom.styles.onDidAddStyleElement(updateTheme),
+      atom.themes.onDidChangeActiveThemes(updateTheme),
+    );
     const command = (callback) => (event) => this.runGridCommand(event, callback);
     const move = (deltaR, deltaC, extend = false) =>
       command(() => this.moveActiveSelection(deltaR, deltaC, extend));
@@ -176,6 +193,41 @@ class CanvasGrid {
     this.searchCurrentFill = v("--de-grid-search-current", "rgba(240,160,0,0.55)");
   }
 
+  _paletteSignature() {
+    return [
+      this.font,
+      this.colorText,
+      this.colorMuted,
+      this.colorBorder,
+      this.headerBg,
+      this.selectionFill,
+      this.flashFill,
+      this.headerSelectionFill,
+      this.searchMatchFill,
+      this.searchCurrentFill,
+    ].join("|");
+  }
+
+  // The signal behind this is every stylesheet attached to the window, at any
+  // time, and hardly any of them touch the grid — so pay for the re-measure
+  // and the redraw only when the resolved palette or font really moved.
+  updateTheme() {
+    if (!this.refs.wrap?.isConnected) {
+      return;
+    }
+    this.readTheme();
+    const signature = this._paletteSignature();
+    if (signature === this._themeSignature) {
+      return;
+    }
+    this._themeSignature = signature;
+    this.computeLayout();
+    this.handleResize();
+    // Draw synchronously so a repaint raised inside a theme switch's View
+    // Transition lands in the same frame the new styles do.
+    this.draw();
+  }
+
   // Measure row height, the index column, and every data column once, then size
   // the scroll sizer. Column widths are content-derived (we own layout here).
   computeLayout() {
@@ -242,6 +294,7 @@ class CanvasGrid {
     if (!this._themeReadAttached && wrap.isConnected) {
       this._themeReadAttached = true;
       this.readTheme();
+      this._themeSignature = this._paletteSignature();
       this.computeLayout();
     }
     const dpr = window.devicePixelRatio || 1;
