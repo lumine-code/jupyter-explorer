@@ -1100,9 +1100,10 @@ class Explorer {
   }
 
   render() {
-    // Singleton store, fed explicitly via the explorer command / Variable
-    // Explorer. It is intentionally decoupled from store.kernel so switching the
-    // focused editor never re-renders or reloads the panel.
+    // Singleton store, fed explicitly via the explorer command /
+    // jupyter-variables. It is intentionally decoupled from jupyter-repl's
+    // current-kernel tracking so switching the focused editor never re-renders
+    // or reloads the panel.
     const store = this.props.store;
     const view = store.viewMode;
     const isChart = view !== "grid" && view !== "summary";
