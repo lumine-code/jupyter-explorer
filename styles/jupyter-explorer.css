@@ -26,7 +26,6 @@
         /* Bordered, rounded input that accents on focus, matching the watch editor. */
         .data-explorer-expression {
           padding: calc(var(--component-padding) / 2);
-          font-size: var(--font-size);
           min-height: 2.5em;
           max-height: 10em;
           overflow-y: auto;
@@ -35,8 +34,14 @@
           background-color: var(--syntax-background-color);
           transition: border-color 0.15s ease;
 
+          /* A UI theme rings a focused editor only under `atom-panel-container`,
+             which is where the docks live, and even there it loses to this
+             rule's specificity on the border colour. Own the focus state here
+             rather than depending on where the panel sits. */
           &.is-focused {
-            border-color: var(--jupyter-repl-accent-color);
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 1px var(--accent-color);
           }
 
           .cursor-line {
@@ -103,7 +108,7 @@
         background: transparent;
         padding: 1px 4px;
         border-radius: var(--component-border-radius);
-        color: var(--jupyter-repl-accent-color);
+        color: var(--accent-color);
         cursor: pointer;
         font-family: inherit;
         max-width: 22em;
@@ -215,6 +220,22 @@
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
+  /* Summary table and charts render in this slot. Without a height chain the
+     plot area collapses to zero and Plotly, which waits for a real size,
+     never draws. Hidden when the grid (or a message) is what's on screen —
+     an empty flex:1 slot would otherwise take half the pane from the grid. */
+  .data-explorer-alt-view {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     min-height: 0;
 
     &.is-hidden {

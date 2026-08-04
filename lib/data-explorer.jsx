@@ -1074,7 +1074,10 @@ class DataExplorer {
           {hasData ? renderDataExplorerGrid(des) : null}
           {hasData ? renderGridFooter({ des }) : null}
         </div>
-        <div key="alt" className="data-explorer-alt-view">
+        <div
+          key="alt"
+          className={`data-explorer-alt-view${hasData && (view === "summary" || isChart) ? "" : " is-hidden"}`}
+        >
           {hasData && view === "summary" ? renderSummaryView({ des }) : null}
           {hasData && isChart
             ? renderChartPlot({
