@@ -1,0 +1,50 @@
+{
+  "atom-workspace": {
+    "alt-h d": "jupyter-explorer:explore"
+  },
+
+  "atom-workspace atom-text-editor.data-explorer-expression:not([mini])": {
+    "enter": "core:confirm",
+    "shift-enter": "editor:newline",
+    "escape": "core:cancel",
+    "tab": "jupyter-explorer:focus-toolbar",
+    "shift-tab": "jupyter-explorer:focus-body"
+  },
+  "atom-workspace .data-explorer-toolbar-row": {
+    "left": "jupyter-explorer:toolbar-left",
+    "right": "jupyter-explorer:toolbar-right",
+    "enter": "jupyter-explorer:toolbar-confirm",
+    "tab": "jupyter-explorer:focus-body",
+    "shift-tab": "jupyter-explorer:focus-expression"
+  },
+  "atom-workspace .data-explorer-body": {
+    "tab": "jupyter-explorer:focus-expression",
+    "shift-tab": "jupyter-explorer:focus-toolbar"
+  },
+  "atom-workspace .data-explorer-canvas-wrap": {
+    "enter": "core:confirm",
+    "backspace": "jupyter-explorer:drill-up",
+    "up": "core:move-up",
+    "down": "core:move-down",
+    "left": "core:move-left",
+    "right": "core:move-right",
+    "shift-up": "core:select-up",
+    "shift-down": "core:select-down",
+    "shift-left": "core:select-left",
+    "shift-right": "core:select-right",
+    "pageup": "jupyter-explorer:grid-page-up",
+    "pagedown": "jupyter-explorer:grid-page-down",
+    "shift-pageup": "jupyter-explorer:grid-select-page-up",
+    "shift-pagedown": "jupyter-explorer:grid-select-page-down",
+    "home": "jupyter-explorer:grid-move-to-row-start",
+    "end": "jupyter-explorer:grid-move-to-row-end",
+    "shift-home": "jupyter-explorer:grid-select-to-row-start",
+    "shift-end": "jupyter-explorer:grid-select-to-row-end",
+    "cmdorctrl-home": "core:move-to-top",
+    "cmdorctrl-end": "core:move-to-bottom",
+    "cmdorctrl-shift-home": "core:select-to-top",
+    "cmdorctrl-shift-end": "core:select-to-bottom",
+    "shift-space": "jupyter-explorer:grid-select-row",
+    "ctrl-space": "jupyter-explorer:grid-select-column"
+  }
+}

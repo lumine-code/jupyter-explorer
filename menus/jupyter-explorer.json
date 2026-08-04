@@ -1,0 +1,22 @@
+{
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "Jupyter Data Explorer",
+          "submenu": [
+            {
+              "label": "Explore Under Cursor",
+              "command": "jupyter-explorer:explore"
+            },
+            {
+              "label": "Open Data Explorer",
+              "command": "jupyter-explorer:open"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

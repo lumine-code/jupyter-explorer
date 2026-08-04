@@ -1,0 +1,387 @@
+/*
+ * The panel used to be nested inside `.jupyter-repl`; it is rooted on its own
+ * pane element now, and code / pre inherit what jupyter-repl used to set.
+ */
+.jupyter-explorer .data-explorer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px;
+  box-sizing: border-box;
+
+  .data-explorer-controls {
+    flex: 0 0 auto;
+    padding-bottom: 6px;
+
+    .data-explorer-expression {
+      display: flex;
+      gap: 4px;
+      align-items: flex-start;
+
+      .data-explorer-expression-editor {
+        flex: 1 1 auto;
+        min-width: 0;
+
+        /* Bordered, rounded input that accents on focus, matching the watch editor. */
+        .data-explorer-expression {
+          padding: calc(var(--component-padding) / 2);
+          font-size: var(--font-size);
+          min-height: 2.5em;
+          max-height: 10em;
+          overflow-y: auto;
+          border: 1px solid var(--base-border-color);
+          border-radius: var(--component-border-radius);
+          background-color: var(--syntax-background-color);
+          transition: border-color 0.15s ease;
+
+          &.is-focused {
+            border-color: var(--jupyter-repl-accent-color);
+          }
+
+          .cursor-line {
+            background: transparent;
+          }
+        }
+      }
+
+      .btn {
+        flex: 0 0 auto;
+      }
+    }
+
+    /* View toolbar, breadcrumb and axis controls share a row, wrapping onto
+       further lines when there isn't enough width. */
+    .data-explorer-toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+      margin-top: 6px;
+
+      .data-explorer-object-meta {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 180px;
+
+        .data-explorer-object-type {
+          color: var(--text-color-info);
+          white-space: nowrap;
+        }
+
+        .data-explorer-object-repr {
+          color: var(--text-color-subtle);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+      }
+    }
+
+    .data-explorer-view-toggle {
+      flex: 0 0 auto;
+    }
+
+    /* Drill-down trail shown when navigating into nested structures. Lives
+       inline in the toolbar row. */
+    .data-explorer-breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.9em;
+
+      .data-explorer-breadcrumb-sep {
+        color: var(--text-color-subtle);
+      }
+
+      .data-explorer-breadcrumb-item {
+        border: none;
+        background: transparent;
+        padding: 1px 4px;
+        border-radius: var(--component-border-radius);
+        color: var(--jupyter-repl-accent-color);
+        cursor: pointer;
+        font-family: inherit;
+        max-width: 22em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) {
+          background-color: var(--background-color-highlight);
+        }
+
+        &:disabled {
+          color: var(--text-color);
+          cursor: default;
+        }
+      }
+    }
+
+    /* Plot axis controls; wrap along with the rest of the toolbar. */
+    .data-explorer-plot-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+
+      /* Each control is fully inline: label, −/+ buttons, then the dropdown. */
+      .data-explorer-control {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 6px;
+
+        > span {
+          color: var(--text-color-subtle);
+          font-size: 0.9em;
+        }
+
+        /* −/+ buttons and the dropdown joined into one group with shared
+           borders and only the outer corners rounded. */
+        .data-explorer-axis-group {
+          display: inline-flex;
+          align-items: stretch;
+
+          .btn,
+          .input-select {
+            border-radius: 0;
+          }
+
+          > * + * {
+            margin-left: -1px;
+          }
+
+          > :first-child {
+            border-top-left-radius: var(--component-border-radius);
+            border-bottom-left-radius: var(--component-border-radius);
+          }
+
+          > :last-child {
+            border-top-right-radius: var(--component-border-radius);
+            border-bottom-right-radius: var(--component-border-radius);
+          }
+
+          /* Keep the focused/hovered element's border above its neighbours. */
+          .btn:hover,
+          .btn:focus,
+          .input-select:focus {
+            position: relative;
+            z-index: 1;
+          }
+        }
+      }
+
+      .data-explorer-ycol-list {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px 10px;
+
+        .input-label {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+        }
+      }
+    }
+  }
+
+  .data-explorer-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    outline: none;
+  }
+
+  /* Grid stays mounted so switching views doesn't rebuild it; hidden when
+     another view is active. */
+  .data-explorer-grid-view {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    &.is-hidden {
+      display: none;
+    }
+  }
+
+  .data-explorer-message {
+    flex: 0 0 auto;
+    padding: 1em 0.5em;
+    text-align: center;
+    color: var(--text-color-subtle);
+
+    > div {
+      margin-bottom: 0.25em;
+    }
+  }
+
+  /* Canvas-rendered grid. The whole grid is one <canvas> on its own
+     compositing layer, so focusing/blurring the pane can't trigger the
+     cell-by-cell re-raster a sticky HTML table suffers. Native scrolling is
+     kept via an absolute sizer + a sticky canvas pinned over the viewport.
+     The custom properties below are read by the canvas renderer so it matches
+     the active theme. */
+  .data-explorer-canvas-wrap {
+    flex: 1 1 auto;
+    position: relative;
+    overflow: auto;
+    min-height: 0;
+    outline: none;
+    user-select: none;
+    cursor: default;
+    /* Read by the canvas renderer (getComputedStyle().fontFamily) so the grid
+       matches the editor font. */
+    font-family: var(--editor-font-family);
+
+    --de-grid-text: var(--text-color);
+    --de-grid-muted: var(--text-color-subtle);
+    --de-grid-border: rgb(from var(--base-border-color) r g b / 0.35);
+    --de-grid-header-bg: var(--background-color-highlight);
+    --de-grid-selection: rgb(from var(--text-color-info) r g b / 0.25);
+    --de-grid-flash: rgb(from var(--text-color-info) r g b / 0.35);
+    --de-grid-header-selection: rgb(from var(--text-color-info) r g b / 0.1);
+    /* Match the text-editor find highlight colours (search-panel uses these
+       same syntax variables for .find-result / .current-result). */
+    --de-grid-search: rgb(from var(--syntax-result-marker-color) r g b / 0.3);
+    --de-grid-search-current: rgb(from var(--syntax-result-marker-color-selected) r g b / 0.55);
+  }
+
+  .data-explorer-canvas-sizer {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .data-explorer-canvas {
+    position: sticky;
+    top: 0;
+    left: 0;
+    display: block;
+  }
+
+  .data-explorer-table-wrapper {
+    flex: 1 1 auto;
+    overflow: auto;
+    cursor: default;
+    outline: none;
+
+    .data-explorer-table {
+      width: 100%;
+      /* Separate borders with no spacing so each cell owns a single border. */
+      border-collapse: separate;
+      border-spacing: 0;
+
+      --jupyter-repl-de-border: rgb(from var(--base-border-color) r g b / 0.35);
+
+      th,
+      td {
+        padding: 0.3em 0.5em;
+        border-right: 1px solid var(--jupyter-repl-de-border);
+        border-bottom: 1px solid var(--jupyter-repl-de-border);
+        white-space: nowrap;
+      }
+
+      /* Outer top / left edges (other edges come from each cell's own borders). */
+      th:first-child,
+      td:first-child {
+        border-left: 1px solid var(--jupyter-repl-de-border);
+      }
+
+      /* Sticky header. A border on a sticky cell stops repainting when
+         scrolled, so separators are drawn with box-shadows, which stick
+         reliably; the top/left edges stay as normal borders. */
+      > thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background-color: var(--background-color-highlight);
+        border-top: 1px solid var(--jupyter-repl-de-border);
+        border-bottom: 0;
+        box-shadow: inset 0 -1px 0 var(--jupyter-repl-de-border);
+      }
+
+      /* Sticky first (index) column. Right separator via box-shadow. */
+      .data-explorer-index-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        color: var(--text-color-subtle);
+        background-color: var(--background-color-highlight);
+        border-right: 0;
+        box-shadow: inset -1px 0 0 var(--jupyter-repl-de-border);
+      }
+
+      /* Top-left corner: sticky in both axes, above everything, with both the
+         bottom and right separators. */
+      .data-explorer-index-head {
+        left: 0;
+        z-index: 4;
+        color: var(--text-color-subtle);
+        background-color: var(--background-color-highlight);
+        border-right: 0;
+        box-shadow: inset -1px -1px 0 var(--jupyter-repl-de-border);
+      }
+
+      /* Row highlighted from a plot-point click (override the sticky cell bg). */
+      tr.data-explorer-row-selected td,
+      tr.data-explorer-row-selected .data-explorer-index-cell {
+        background-color: rgb(from var(--text-color-info) r g b / 0.25);
+      }
+    }
+  }
+
+  .data-explorer-scalar {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 0.5em;
+    outline: none;
+  }
+
+  .data-explorer-pager {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+
+    .data-explorer-page-label {
+      white-space: nowrap;
+    }
+  }
+
+  .data-explorer-plot {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    outline: none;
+
+    .data-explorer-plot-area {
+      flex: 1 1 auto;
+      overflow: hidden;
+      min-height: 0;
+
+      .data-explorer-plotly {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+}
+
+.jupyter-explorer code,
+.jupyter-explorer pre {
+  font-family: var(--editor-font-family);
+  white-space: pre-wrap;
+  word-break: normal;
+}

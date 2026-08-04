@@ -1,0 +1,75 @@
+{
+  "name": "jupyter-explorer",
+  "author": "lumine-code",
+  "description": "Explore dataframes, arrays and nested objects in a searchable grid.",
+  "repository": "https://github.com/lumine-code/jupyter-explorer",
+  "bugs": {
+    "url": "https://github.com/lumine-code/jupyter-explorer/issues"
+  },
+  "homepage": "https://github.com/lumine-code/jupyter-explorer#readme",
+  "keywords": [
+    "dataframe",
+    "pandas",
+    "numpy",
+    "plotly",
+    "grid",
+    "chart",
+    "data"
+  ],
+  "version": "1.0.0",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.100.0 <2.0.0"
+  },
+  "backgroundTips": [
+    "You can explore whatever the cursor is on with {{ 'jupyter-explorer:explore' | keystroke }}"
+  ],
+  "main": "./lib/main",
+  "activationCommands": {
+    "atom-workspace": [
+      "jupyter-explorer:explore",
+      "jupyter-explorer:open"
+    ]
+  },
+  "scripts": {
+    "test": "lumine --test spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "providedServices": {
+    "jupyter.explorer": {
+      "versions": {
+        "1.0.0": "provideDataExplorer"
+      }
+    },
+    "search.adapter": {
+      "versions": {
+        "1.0.0": "provideSearchAdapter"
+      }
+    }
+  },
+  "consumedServices": {
+    "jupyter.kernel": {
+      "versions": {
+        "^1.0.0": "consumeJupyterKernel"
+      }
+    },
+    "autocomplete.watch-editor": {
+      "versions": {
+        "^1.0.0": "consumeAutocompleteWatchEditor"
+      }
+    }
+  },
+  "dependencies": {
+    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#5801d1e3dd5078db7b575d55e72c6e85bd0dcf53",
+    "plotly.js-dist": "^3.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6"
+  }
+}
