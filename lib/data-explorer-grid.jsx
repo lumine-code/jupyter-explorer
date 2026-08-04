@@ -234,6 +234,16 @@ class CanvasGrid {
     if (w === 0 || h === 0) {
       return; // hidden (e.g. another view active); redraw when shown again.
     }
+    // didMount ran while the element was still detached (etch attaches the
+    // subtree after construction), where getComputedStyle answers nothing:
+    // every colour fell back and the fonts fell back with them. The first
+    // resize with a real size is the earliest attached moment, so read the
+    // theme again and re-measure the columns with the true font.
+    if (!this._themeReadAttached && wrap.isConnected) {
+      this._themeReadAttached = true;
+      this.readTheme();
+      this.computeLayout();
+    }
     const dpr = window.devicePixelRatio || 1;
     this.dpr = dpr;
     this.viewW = w;
