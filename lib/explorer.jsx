@@ -841,6 +841,8 @@ class ExpressionEditor {
       placeholderText: "Expression to load (e.g. df)",
     });
     this.editor.element.classList.add("explorer-expression");
+    // A form control, not a document: the editor draws the shared input box.
+    this.editor.element.setAttribute("input", "");
     if (this.props.grammar) {
       atom.grammars.assignLanguageMode(this.editor.getBuffer(), this.props.grammar.scopeName);
     }
