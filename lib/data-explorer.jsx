@@ -816,6 +816,7 @@ function renderPayloadMeta({ des, view }) {
     <div className="data-explorer-object-meta">
       <span className="data-explorer-object-type">{meta.kind}</span>
       <span className="data-explorer-object-repr">{meta.detail}</span>
+      {des.loading ? <span className="loading loading-spinner-tiny" /> : null}
     </div>
   );
 }
@@ -1040,7 +1041,11 @@ class DataExplorer {
     // died in insertBefore. The fragment is permanent now; only its keyed
     // children come and go.
     let message = null;
-    if (des.loading) {
+    if (des.loading && !des.payload) {
+      // Only the very first load has nothing to show. A reload or a drill
+      // keeps the current table on screen — swapping it for a loading screen
+      // reads as a flicker when the kernel answers quickly; the toolbar
+      // spinner is the loading cue instead.
       message = renderMessage("Loading...");
     } else if (des.error) {
       message = renderMessage(<span className="text-error">{des.error}</span>);

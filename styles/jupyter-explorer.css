@@ -83,6 +83,13 @@
           white-space: nowrap;
           min-width: 0;
         }
+
+        /* Reload/drill progress; the body keeps showing the current table. */
+        > .loading {
+          flex: 0 0 auto;
+          margin-left: auto;
+          align-self: center;
+        }
       }
     }
 
