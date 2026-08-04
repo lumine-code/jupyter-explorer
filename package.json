@@ -25,12 +25,6 @@
     "You can explore whatever the cursor is on with {{ 'jupyter-explorer:explore' | keystroke }}"
   ],
   "main": "./lib/main",
-  "activationCommands": {
-    "atom-workspace": [
-      "jupyter-explorer:explore",
-      "jupyter-explorer:open"
-    ]
-  },
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
