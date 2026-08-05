@@ -47,6 +47,19 @@ describe("data explorer", () => {
 
   const body = () => component.element.querySelector(".explorer-body");
 
+  it("hands focus to the grid when data is fed in", () => {
+    // The variables panel feeds an expression through the service; the grid
+    // must take focus once it renders — the token drives that hand-off, the
+    // same way a drill's does. Typing in the panel's own editor does not.
+    const kernel = { language: "python", executeWatch() {} };
+    const before = store.focusToken;
+    store.load(kernel, "df");
+    expect(store.focusToken).toBe(before + 1);
+
+    store.loadExpression("df.head()");
+    expect(store.focusToken).toBe(before + 1);
+  });
+
   it("asks for an expression before anything is loaded", () => {
     flush(component);
     expect(body().textContent).toContain("No data loaded");
