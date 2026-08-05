@@ -21,6 +21,10 @@ function coalesce(callback) {
 const PAD_X = 8;
 const MIN_COL = 48;
 const MAX_COL = 360;
+// How close (px) to a header boundary a press counts as grabbing it, and how
+// narrow a column can be dragged.
+const RESIZE_GRIP = 4;
+const MIN_DRAG_COL = 24;
 // Rows sampled (header + first N) when auto-sizing columns, so very large
 // frames don't pay to measure every cell.
 const SAMPLE_ROWS = 200;
@@ -54,6 +58,11 @@ class CanvasGrid {
   dragging = false;
   focused = false;
   _rafPending = false;
+  // Manual column widths from a header-boundary drag, by column index; the
+  // index column has its own. Cleared when the payload changes shape.
+  _colWidthOverrides = new Map();
+  _indexWidthOverride = null;
+  _resizing = null;
 
   constructor(props) {
     this.props = props;
@@ -145,6 +154,8 @@ class CanvasGrid {
     if (prev.payload !== this.props.payload) {
       this.sel = null;
       this.selections = [];
+      this._colWidthOverrides.clear();
+      this._indexWidthOverride = null;
       this.readTheme();
       this.computeLayout();
       this.handleResize();
@@ -175,6 +186,8 @@ class CanvasGrid {
     this._commands?.dispose();
     window.removeEventListener("mousemove", this.handleWindowMouseMove);
     window.removeEventListener("mouseup", this.handleWindowMouseUp);
+    window.removeEventListener("mousemove", this.handleResizeMove);
+    window.removeEventListener("mouseup", this.handleResizeUp);
   }
 
   // Read fonts and palette from CSS (custom properties on the wrapper) so the
@@ -256,9 +269,13 @@ class CanvasGrid {
       const t = index ? String(index[r]) : String(r);
       iw = Math.max(iw, this.ctx.measureText(t).width);
     }
-    this.indexWidth = Math.ceil(iw) + PAD_X * 2;
+    this.indexWidth = this._indexWidthOverride ?? Math.ceil(iw) + PAD_X * 2;
 
     this.colWidths = columns.map((col, c) => {
+      const override = this._colWidthOverrides.get(c);
+      if (override != null) {
+        return override;
+      }
       let w = this.ctx.measureText(String(col)).width;
       for (let r = 0; r < sample; r++) {
         const m = this.ctx.measureText(formatCell(rows[r][c])).width;
@@ -957,8 +974,87 @@ class CanvasGrid {
     this.scheduleDraw();
   }
 
+  // A press within the header row close to a column's right edge grabs that
+  // edge; the index column's edge resizes the index gutter.
+  resizeHit(clientX, clientY) {
+    const rect = this.refs.wrap.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    if (py >= this.headerHeight || !this.colX) {
+      return null;
+    }
+    const contentX = px + this.refs.wrap.scrollLeft;
+    if (Math.abs(px - this.indexWidth) <= RESIZE_GRIP) {
+      return { index: true };
+    }
+    for (let c = 0; c < this.colWidths.length; c++) {
+      const edge = this.colX[c] + this.colWidths[c];
+      if (px > this.indexWidth && Math.abs(contentX - edge) <= RESIZE_GRIP) {
+        return { c };
+      }
+    }
+    return null;
+  }
+
+  // Re-run the geometry that depends on widths without re-measuring text.
+  _applyWidths() {
+    this.colX = [];
+    let x = this.indexWidth;
+    for (const w of this.colWidths) {
+      this.colX.push(x);
+      x += w;
+    }
+    this.totalWidth = x;
+    if (this.refs.sizer) {
+      this.refs.sizer.style.width = `${this.totalWidth}px`;
+    }
+    this.scheduleDraw();
+  }
+
+  handleResizeMove = (e) => {
+    const r = this._resizing;
+    if (!r) {
+      return;
+    }
+    const width = Math.max(MIN_DRAG_COL, r.startWidth + (e.clientX - r.startX));
+    if (r.hit.index) {
+      this._indexWidthOverride = width;
+      this.indexWidth = width;
+    } else {
+      this._colWidthOverrides.set(r.hit.c, width);
+      this.colWidths[r.hit.c] = width;
+    }
+    this._applyWidths();
+  };
+
+  handleResizeUp = () => {
+    this._resizing = null;
+    window.removeEventListener("mousemove", this.handleResizeMove);
+    window.removeEventListener("mouseup", this.handleResizeUp);
+  };
+
+  // Show the col-resize cursor while hovering a grabbable edge.
+  handleMouseMove = (e) => {
+    if (this._resizing || this.dragging) {
+      return;
+    }
+    this.refs.wrap.style.cursor = this.resizeHit(e.clientX, e.clientY) ? "col-resize" : "";
+  };
+
   handleMouseDown = (e) => {
     if (e.button !== 0) {
+      return;
+    }
+    const resizeHit = this.resizeHit(e.clientX, e.clientY);
+    if (resizeHit) {
+      this._resizing = {
+        hit: resizeHit,
+        startX: e.clientX,
+        startWidth: resizeHit.index ? this.indexWidth : this.colWidths[resizeHit.c],
+      };
+      window.addEventListener("mousemove", this.handleResizeMove);
+      window.addEventListener("mouseup", this.handleResizeUp);
+      e.preventDefault();
       return;
     }
     // Interacting with the grid dismisses the plot-jump highlight.
@@ -1062,6 +1158,7 @@ class CanvasGrid {
         tabIndex={0}
         onScroll={this.handleScroll}
         onMouseDown={this.handleMouseDown}
+        onMouseMove={this.handleMouseMove}
         onDoubleClick={this.handleDoubleClick}
         onKeyDown={this.handleKeyDown}
         onFocus={this.handleFocus}
