@@ -55,9 +55,7 @@ describe("data explorer", () => {
   it("renders the toolbar and the expression editor", () => {
     flush(component);
     expect(component.element.querySelectorAll(".explorer-view-toggle .btn").length).toBe(4);
-    expect(
-      component.element.querySelector("atom-text-editor.explorer-expression"),
-    ).toBeTruthy();
+    expect(component.element.querySelector("atom-text-editor.explorer-expression")).toBeTruthy();
   });
 
   it("renders the canvas grid for a tabular payload", () => {
@@ -122,8 +120,6 @@ describe("data explorer", () => {
     store.setPayload({ ...tabularPayload(), truncated: true, total_rows: 999 });
     flush(component);
 
-    expect(component.element.querySelector(".explorer-pager").textContent).toContain(
-      "of 999 rows",
-    );
+    expect(component.element.querySelector(".explorer-pager").textContent).toContain("of 999 rows");
   });
 });
