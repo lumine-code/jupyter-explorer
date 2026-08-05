@@ -1,6 +1,6 @@
 {
   "atom-workspace": {
-    "alt-h d": "jupyter-explorer:explore"
+    "alt-j e": "jupyter-explorer:explore"
   },
 
   "atom-workspace atom-text-editor.explorer-expression:not([mini])": {
