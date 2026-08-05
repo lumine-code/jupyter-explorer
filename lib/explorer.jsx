@@ -1,3 +1,5 @@
+/** @jsx etch.dom */
+/** @jsxFrag etch.Fragment */
 const etch = require("@lumine-code/etch");
 const { INDEX_COLUMN } = require("./explorer-store");
 const { renderExplorerGrid } = require("./explorer-grid");
