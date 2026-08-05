@@ -891,16 +891,11 @@ class CanvasGrid {
     }
   }
 
-  // Show the selection when the grid gains focus, seeding an active cell at the
-  // top-left so the highlight is visible immediately (no arrow press needed).
+  // Show the existing selection when the grid gains focus. Nothing is
+  // seeded: a selection appears when the keyboard (or a click) makes one, so
+  // transient focus during pane activation cannot flash a cell at 0,0.
   handleFocus = () => {
     this.focused = true;
-    if (!this.hasSelection()) {
-      const { nRows, nCols } = this.gridSize();
-      if (nRows > 0 && nCols > 0) {
-        this.startSelection({ zone: "body", r: 0, c: 0 });
-      }
-    }
     this.scheduleDraw();
   };
 
