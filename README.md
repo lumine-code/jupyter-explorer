@@ -57,9 +57,9 @@ The panel is bound to the kernel the value came from, so the status bar keeps sh
 
 ## Customization
 
-Paste this into your `styles.less` to fit more rows on screen:
+Paste this into your `styles.css` to fit more rows on screen:
 
-```less
+```css
 .jupyter-explorer {
   .explorer-canvas-wrap {
     font-size: 0.9em;
