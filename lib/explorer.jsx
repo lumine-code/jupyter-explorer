@@ -357,14 +357,7 @@ class ResponsivePlot {
 
   downloadImage = (gd) => {
     this.Plotly.toImage(gd).then((dataUrl) => {
-      const remote = require(
-        require("path").join(
-          atom.getLoadSettings().resourcePath,
-          "node_modules",
-          "@electron/remote",
-        ),
-      );
-      remote.getCurrentWebContents().downloadURL(dataUrl);
+      return atom.window.downloadURL(dataUrl);
     });
   };
 
