@@ -357,7 +357,7 @@ class ResponsivePlot {
 
   downloadImage = (gd) => {
     this.Plotly.toImage(gd).then((dataUrl) => {
-      return atom.window.downloadURL(dataUrl);
+      return lumine.window.downloadURL(dataUrl);
     });
   };
 
@@ -818,7 +818,7 @@ function renderPayloadMeta({ store, view }) {
 
 /**
  * Multi-line expression editor, built the same way as the watch editor
- * (atom.workspace.buildTextEditor + assignLanguageMode, no textEditors.add which
+ * (lumine.workspace.buildTextEditor + assignLanguageMode, no textEditors.add which
  * would reset the grammar to plain text). Live edits update the stored
  * expression; Enter confirms / loads, Shift+Enter inserts a newline (keymaps).
  */
@@ -830,7 +830,7 @@ class ExpressionEditor {
   }
 
   didMount() {
-    this.editor = atom.workspace.buildTextEditor({
+    this.editor = lumine.workspace.buildTextEditor({
       softWrapped: true,
       lineNumberGutterVisible: false,
       placeholderText: "Expression to load (e.g. df)",
@@ -839,7 +839,7 @@ class ExpressionEditor {
     // A form control, not a document: the editor draws the shared input box.
     this.editor.element.setAttribute("input", "");
     if (this.props.grammar) {
-      atom.grammars.assignLanguageMode(this.editor.getBuffer(), this.props.grammar.scopeName);
+      lumine.grammars.assignLanguageMode(this.editor.getBuffer(), this.props.grammar.scopeName);
     }
     if (this.props.value) {
       this.editor.setText(this.props.value);
@@ -853,7 +853,7 @@ class ExpressionEditor {
       if (this._settingText) return;
       this.props.onChange(this.editor.getText());
     });
-    this._commands = atom.commands.add(this.editor.element, {
+    this._commands = lumine.commands.add(this.editor.element, {
       "core:confirm": () => this.props.onConfirm(this.editor.getText()),
       "core:cancel": (event) =>
         clearExpressionOrAbortMultiCursor(this.editor, this.props.onChange, event),
@@ -901,12 +901,12 @@ class Explorer {
 
   didMount() {
     this._lastFocusToken = this.props.store.focusToken;
-    this._bodyCommands = atom.commands.add(this.refs.body, {
+    this._bodyCommands = lumine.commands.add(this.refs.body, {
       "jupyter-explorer:focus-expression": () => this.focusExpression(),
       "jupyter-explorer:focus-toolbar": () => this.focusToolbar(),
       "jupyter-explorer:drill-up": () => this.props.store.drillUp(),
     });
-    this._toolbarCommands = atom.commands.add(this.refs.toolbar, {
+    this._toolbarCommands = lumine.commands.add(this.refs.toolbar, {
       "jupyter-explorer:toolbar-left": (event) => this.focusToolbarItem(event, -1),
       "jupyter-explorer:toolbar-right": (event) => this.focusToolbarItem(event, 1),
       "jupyter-explorer:toolbar-confirm": (event) => this.confirmToolbarItem(event),

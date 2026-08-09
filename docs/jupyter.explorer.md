@@ -42,7 +42,7 @@ Required members:
 ## Minimal example
 
 ```js
-const { Disposable } = require("atom");
+const { Disposable } = require("lumine");
 
 module.exports = {
   consumeJupyterExplorer(service) {

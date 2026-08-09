@@ -1,6 +1,6 @@
 /** @jsx etch.dom */
 const etch = require("@lumine-code/etch");
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 
 // Batch a burst of synchronous calls into one, at the end of the task that
 // raised them (a theme switch attaches several stylesheets back to back). The
@@ -85,8 +85,8 @@ class CanvasGrid {
     // signal a day/night variant switch through `updateAppearance` gives.
     const updateTheme = coalesce(() => this.updateTheme());
     this._themeDisposable = new CompositeDisposable(
-      atom.styles.onDidAddStyleElement(updateTheme),
-      atom.themes.onDidChangeActiveThemes(updateTheme),
+      lumine.styles.onDidAddStyleElement(updateTheme),
+      lumine.themes.onDidChangeActiveThemes(updateTheme),
     );
     const command = (callback) => (event) => this.runGridCommand(event, callback);
     const move = (deltaR, deltaC, extend = false) =>
@@ -97,7 +97,7 @@ class CanvasGrid {
     const page = (direction, extend = false) =>
       command(() => this.moveActiveSelection(direction * this.pageRowCount(), 0, extend));
 
-    this._commands = atom.commands.add(this.refs.wrap, {
+    this._commands = lumine.commands.add(this.refs.wrap, {
       "core:move-up": navigate(-1, 0),
       "core:move-down": navigate(1, 0),
       "core:move-left": navigate(0, -1),
@@ -1134,7 +1134,7 @@ class CanvasGrid {
         lines.push(cells.join("\t"));
       }
     }
-    atom.clipboard.write(lines.join("\n"));
+    lumine.clipboard.write(lines.join("\n"));
   }
 
   scrollToSelected() {

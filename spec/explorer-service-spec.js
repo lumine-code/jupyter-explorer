@@ -31,7 +31,7 @@ function fakeProvider(kernel, expression) {
 describe("jupyter.explorer", () => {
   afterEach(() => {
     explorerStore.reset();
-    for (const item of atom.workspace.getPaneItems()) {
+    for (const item of lumine.workspace.getPaneItems()) {
       if (item.getURI?.() === main.EXPLORER_URI) {
         item.destroy();
       }
@@ -55,7 +55,7 @@ describe("jupyter.explorer", () => {
     const kernel = fakeKernel();
     main.consumeJupyterKernel(fakeProvider(kernel, "df.head()"));
 
-    await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
+    await lumine.commands.dispatch(lumine.views.getView(lumine.workspace), "jupyter-explorer:open");
 
     expect(explorerStore.kernel).toBe(kernel);
     expect(explorerStore.expression).toBe("df.head()");
@@ -67,7 +67,7 @@ describe("jupyter.explorer", () => {
     const kernel = fakeKernel();
     main.consumeJupyterKernel(fakeProvider(kernel, ""));
 
-    await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:open");
+    await lumine.commands.dispatch(lumine.views.getView(lumine.workspace), "jupyter-explorer:open");
 
     expect(explorerStore.kernel).toBe(kernel);
     expect(explorerStore.expression).toBe("");
@@ -103,11 +103,14 @@ describe("jupyter.explorer", () => {
     main.activate();
     const kernel = fakeKernel("julia");
     main.consumeJupyterKernel(fakeProvider(kernel, "df"));
-    spyOn(atom.notifications, "addWarning");
+    spyOn(lumine.notifications, "addWarning");
 
-    await atom.commands.dispatch(atom.views.getView(atom.workspace), "jupyter-explorer:explore");
+    await lumine.commands.dispatch(
+      lumine.views.getView(lumine.workspace),
+      "jupyter-explorer:explore",
+    );
 
-    expect(atom.notifications.addWarning).toHaveBeenCalled();
+    expect(lumine.notifications.addWarning).toHaveBeenCalled();
     expect(kernel.executed).toEqual([]);
     main.deactivate();
   });

@@ -1,27 +1,27 @@
 {
-  "atom-workspace": {
+  "lumine-workspace": {
     "alt-j e": "jupyter-explorer:explore"
   },
 
-  "atom-workspace atom-text-editor.explorer-expression:not([mini])": {
+  "lumine-workspace lumine-text-editor.explorer-expression:not([mini])": {
     "enter": "core:confirm",
     "shift-enter": "editor:newline",
     "escape": "core:cancel",
     "tab": "jupyter-explorer:focus-toolbar",
     "shift-tab": "jupyter-explorer:focus-body"
   },
-  "atom-workspace .explorer-toolbar-row": {
+  "lumine-workspace .explorer-toolbar-row": {
     "left": "jupyter-explorer:toolbar-left",
     "right": "jupyter-explorer:toolbar-right",
     "enter": "jupyter-explorer:toolbar-confirm",
     "tab": "jupyter-explorer:focus-body",
     "shift-tab": "jupyter-explorer:focus-expression"
   },
-  "atom-workspace .explorer-body": {
+  "lumine-workspace .explorer-body": {
     "tab": "jupyter-explorer:focus-expression",
     "shift-tab": "jupyter-explorer:focus-toolbar"
   },
-  "atom-workspace .explorer-canvas-wrap": {
+  "lumine-workspace .explorer-canvas-wrap": {
     "enter": "core:confirm",
     "backspace": "jupyter-explorer:drill-up",
     "up": "core:move-up",

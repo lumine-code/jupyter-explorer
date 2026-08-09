@@ -55,7 +55,7 @@ describe("data explorer", () => {
   it("renders the toolbar and the expression editor", () => {
     flush(component);
     expect(component.element.querySelectorAll(".explorer-view-toggle .btn").length).toBe(4);
-    expect(component.element.querySelector("atom-text-editor.explorer-expression")).toBeTruthy();
+    expect(component.element.querySelector("lumine-text-editor.explorer-expression")).toBeTruthy();
   });
 
   it("renders the canvas grid for a tabular payload", () => {

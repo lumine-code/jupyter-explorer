@@ -7,7 +7,7 @@ const ExplorerPane = require("../lib/explorer-pane");
 describe("jupyter-explorer pane teardown", () => {
   it("leaves no tab behind when destroyed directly", () => {
     const item = new ExplorerPane();
-    const pane = atom.workspace.getCenter().getActivePane();
+    const pane = lumine.workspace.getCenter().getActivePane();
     pane.addItem(item);
 
     expect(pane.getItems()).toContain(item);
