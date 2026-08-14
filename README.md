@@ -15,7 +15,7 @@ A `repr` tells you a value is a dataframe with 40,000 rows. This shows you the r
 
 ## Installation
 
-To install `jupyter-explorer` search for _jupyter-explorer_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/jupyter-explorer`.
+To install `jupyter-explorer` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-explorer`.
 
 It reads its kernels from [`jupyter-repl`](https://github.com/lumine-code/jupyter-repl), which needs to be installed too.
 
@@ -69,10 +69,10 @@ Paste this into your `styles.css` to fit more rows on screen:
 
 ## Services
 
-- **[jupyter.explorer](docs/jupyter.explorer.md)** (`1.0.0`): provided to let another package hand over a kernel and an expression to show.
-- **search.adapter** (`1.0.0`): provided to let the search panel query the grid on screen.
-- **jupyter.kernel** (`^1.0.0`): consumed to read the active kernel and ask it to serialize a value.
-- **autocomplete.watch-editor** (`^1.0.0`): consumed to offer completions in the expression field.
+- [`jupyter.explorer`](docs/jupyter.explorer.md): provided to let another package hand over a kernel and an expression to show.
+- `search.adapter`: provided to let the search panel query the grid on screen.
+- `jupyter.kernel`: consumed to read the active kernel and ask it to serialize a value.
+- `autocomplete.watch-editor`: consumed to offer completions in the expression field.
 
 ## Contributing
 
