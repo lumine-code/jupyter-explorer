@@ -136,18 +136,24 @@ class CanvasGrid {
         description: "Move to the first cell of the row.",
         didDispatch: moveTo(null, 0),
       },
-      "jupyter-explorer:grid-move-to-row-end": command(() => {
-        const { nCols } = this.gridSize();
-        this.moveActiveSelectionTo(null, nCols - 1);
-      }),
+      "jupyter-explorer:grid-move-to-row-end": {
+        description: "Move to the last cell of the row.",
+        didDispatch: command(() => {
+          const { nCols } = this.gridSize();
+          this.moveActiveSelectionTo(null, nCols - 1);
+        }),
+      },
       "jupyter-explorer:grid-select-to-row-start": {
         description: "Extend the selection to the start of the row.",
         didDispatch: moveTo(null, 0, true),
       },
-      "jupyter-explorer:grid-select-to-row-end": command(() => {
-        const { nCols } = this.gridSize();
-        this.moveActiveSelectionTo(null, nCols - 1, true);
-      }),
+      "jupyter-explorer:grid-select-to-row-end": {
+        description: "Extend the selection to the end of the row.",
+        didDispatch: command(() => {
+          const { nCols } = this.gridSize();
+          this.moveActiveSelectionTo(null, nCols - 1, true);
+        }),
+      },
       "jupyter-explorer:grid-select-row": {
         description: "Select the whole row the cursor is in.",
         didDispatch: command(() => this.selectActiveRow()),
