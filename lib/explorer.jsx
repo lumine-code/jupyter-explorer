@@ -857,8 +857,14 @@ class ExpressionEditor {
       "core:confirm": () => this.props.onConfirm(this.editor.getText()),
       "core:cancel": (event) =>
         clearExpressionOrAbortMultiCursor(this.editor, this.props.onChange, event),
-      "jupyter-explorer:focus-toolbar": () => this.props.onFocusToolbar?.(),
-      "jupyter-explorer:focus-body": () => this.props.onFocusBody?.(),
+      "jupyter-explorer:focus-toolbar": {
+        description: "Move focus to the explorer's toolbar.",
+        didDispatch: () => this.props.onFocusToolbar?.(),
+      },
+      "jupyter-explorer:focus-body": {
+        description: "Move focus back to the grid of values.",
+        didDispatch: () => this.props.onFocusBody?.(),
+      },
     });
   }
 
@@ -902,16 +908,40 @@ class Explorer {
   didMount() {
     this._lastFocusToken = this.props.store.focusToken;
     this._bodyCommands = lumine.commands.add(this.refs.body, {
-      "jupyter-explorer:focus-expression": () => this.focusExpression(),
-      "jupyter-explorer:focus-toolbar": () => this.focusToolbar(),
-      "jupyter-explorer:drill-up": () => this.props.store.drillUp(),
+      "jupyter-explorer:focus-expression": {
+        description: "Move focus to the box where an expression is typed.",
+        didDispatch: () => this.focusExpression(),
+      },
+      "jupyter-explorer:focus-toolbar": {
+        description: "Move focus to the explorer's toolbar.",
+        didDispatch: () => this.focusToolbar(),
+      },
+      "jupyter-explorer:drill-up": {
+        description: "Go back out to the value this one was opened from.",
+        didDispatch: () => this.props.store.drillUp(),
+      },
     });
     this._toolbarCommands = lumine.commands.add(this.refs.toolbar, {
-      "jupyter-explorer:toolbar-left": (event) => this.focusToolbarItem(event, -1),
-      "jupyter-explorer:toolbar-right": (event) => this.focusToolbarItem(event, 1),
-      "jupyter-explorer:toolbar-confirm": (event) => this.confirmToolbarItem(event),
-      "jupyter-explorer:focus-expression": () => this.focusExpression(),
-      "jupyter-explorer:focus-body": () => this.focusBody(),
+      "jupyter-explorer:toolbar-left": {
+        description: "Move to the toolbar control on the left.",
+        didDispatch: (event) => this.focusToolbarItem(event, -1),
+      },
+      "jupyter-explorer:toolbar-right": {
+        description: "Move to the toolbar control on the right.",
+        didDispatch: (event) => this.focusToolbarItem(event, 1),
+      },
+      "jupyter-explorer:toolbar-confirm": {
+        description: "Activate the toolbar control that has focus.",
+        didDispatch: (event) => this.confirmToolbarItem(event),
+      },
+      "jupyter-explorer:focus-expression": {
+        description: "Move focus to the box where an expression is typed.",
+        didDispatch: () => this.focusExpression(),
+      },
+      "jupyter-explorer:focus-body": {
+        description: "Move focus back to the grid of values.",
+        didDispatch: () => this.focusBody(),
+      },
     });
   }
 

@@ -116,22 +116,46 @@ class CanvasGrid {
         const { nRows, nCols } = this.gridSize();
         this.moveActiveSelectionTo(nRows - 1, nCols - 1, true);
       }),
-      "jupyter-explorer:grid-page-up": page(-1),
-      "jupyter-explorer:grid-page-down": page(1),
-      "jupyter-explorer:grid-select-page-up": page(-1, true),
-      "jupyter-explorer:grid-select-page-down": page(1, true),
-      "jupyter-explorer:grid-move-to-row-start": moveTo(null, 0),
+      "jupyter-explorer:grid-page-up": {
+        description: "Move a screenful up through the grid.",
+        didDispatch: page(-1),
+      },
+      "jupyter-explorer:grid-page-down": {
+        description: "Move a screenful down through the grid.",
+        didDispatch: page(1),
+      },
+      "jupyter-explorer:grid-select-page-up": {
+        description: "Extend the selection a screenful up.",
+        didDispatch: page(-1, true),
+      },
+      "jupyter-explorer:grid-select-page-down": {
+        description: "Extend the selection a screenful down.",
+        didDispatch: page(1, true),
+      },
+      "jupyter-explorer:grid-move-to-row-start": {
+        description: "Move to the first cell of the row.",
+        didDispatch: moveTo(null, 0),
+      },
       "jupyter-explorer:grid-move-to-row-end": command(() => {
         const { nCols } = this.gridSize();
         this.moveActiveSelectionTo(null, nCols - 1);
       }),
-      "jupyter-explorer:grid-select-to-row-start": moveTo(null, 0, true),
+      "jupyter-explorer:grid-select-to-row-start": {
+        description: "Extend the selection to the start of the row.",
+        didDispatch: moveTo(null, 0, true),
+      },
       "jupyter-explorer:grid-select-to-row-end": command(() => {
         const { nCols } = this.gridSize();
         this.moveActiveSelectionTo(null, nCols - 1, true);
       }),
-      "jupyter-explorer:grid-select-row": command(() => this.selectActiveRow()),
-      "jupyter-explorer:grid-select-column": command(() => this.selectActiveColumn()),
+      "jupyter-explorer:grid-select-row": {
+        description: "Select the whole row the cursor is in.",
+        didDispatch: command(() => this.selectActiveRow()),
+      },
+      "jupyter-explorer:grid-select-column": {
+        description: "Select the whole column the cursor is in.",
+        didDispatch: command(() => this.selectActiveColumn()),
+      },
       "core:confirm": command(() => this.drillActiveRow()),
     });
     this.handleResize();
