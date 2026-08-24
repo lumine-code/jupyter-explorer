@@ -54,7 +54,7 @@
         min-width: 180px;
 
         .explorer-object-type {
-          color: var(--text-color-info);
+          color: var(--accent-only-text-color);
           white-space: nowrap;
         }
 
@@ -265,9 +265,9 @@
     --explorer-grid-muted: var(--text-color-subtle);
     --explorer-grid-border: rgb(from var(--base-border-color) r g b / 0.35);
     --explorer-grid-header-bg: var(--background-color-highlight);
-    --explorer-grid-selection: rgb(from var(--text-color-info) r g b / 0.25);
-    --explorer-grid-flash: rgb(from var(--text-color-info) r g b / 0.35);
-    --explorer-grid-header-selection: rgb(from var(--text-color-info) r g b / 0.1);
+    --explorer-grid-selection: rgb(from var(--accent-color) r g b / 0.25);
+    --explorer-grid-flash: rgb(from var(--accent-color) r g b / 0.35);
+    --explorer-grid-header-selection: rgb(from var(--accent-color) r g b / 0.1);
     /* Match the text-editor find highlight colours (search-panel uses these
        same syntax variables for .find-result / .current-result). */
     --explorer-grid-search: rgb(from var(--syntax-result-marker-color) r g b / 0.3);
@@ -355,7 +355,7 @@
       /* Row highlighted from a plot-point click (override the sticky cell bg). */
       tr.explorer-row-selected td,
       tr.explorer-row-selected .explorer-index-cell {
-        background-color: rgb(from var(--text-color-info) r g b / 0.25);
+        background-color: var(--explorer-grid-selection);
       }
     }
   }
