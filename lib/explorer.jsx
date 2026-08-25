@@ -398,6 +398,14 @@ class ResponsivePlot {
   // Right-drag pans 2D plots (matching the right-button move on 3D, which Plotly
   // handles natively). Converts pixel movement to axis-range shifts.
   handleMouseDown = (e) => {
+    if (e.button === 0) {
+      // Plotly handles presses on non-focusable SVG/canvas descendants, so the
+      // browser does not focus the surrounding pane on its own. Focus the
+      // plot surface without consuming the press: PaneElement then activates
+      // this pane, while Plotly still receives the same gesture.
+      this.refs.container.closest(".explorer-plot")?.focus({ preventScroll: true });
+      return;
+    }
     if (e.button !== 2 || this.props.is3D) {
       return;
     }

@@ -109,6 +109,19 @@ describe("data explorer", () => {
     expect(controls.length).toBeGreaterThan(0);
   });
 
+  it("focuses the plot surface on a left-button Plotly interaction", () => {
+    store.setPayload(tabularPayload());
+    store.setViewMode("scatter");
+    flush(component);
+    jasmine.attachToDOM(component.element);
+
+    const plotSurface = component.element.querySelector(".explorer-plot");
+    const plotly = component.element.querySelector(".explorer-plotly");
+    plotly.dispatchEvent(new MouseEvent("mousedown", { button: 0, bubbles: true }));
+
+    expect(document.activeElement).toBe(plotSurface);
+  });
+
   it("reports a load failure in place of the data", () => {
     store.setError("boom");
     flush(component);
