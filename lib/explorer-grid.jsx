@@ -67,15 +67,23 @@ class CanvasGrid {
 
   constructor(props) {
     this.props = props;
-    etch.initialize(this);
+    etch.initialize(this, { document: props.document });
     this.didMount();
+  }
+
+  getDocument() {
+    return this.element.ownerDocument;
+  }
+
+  getWindow() {
+    return this.getDocument().defaultView;
   }
 
   didMount() {
     this.ctx = this.refs.canvas.getContext("2d");
     this.readTheme();
     this.computeLayout();
-    this.resizeObserver = new ResizeObserver(() => this.handleResize());
+    this.resizeObserver = new (this.getWindow().ResizeObserver)(() => this.handleResize());
     this.resizeObserver.observe(this.refs.wrap);
     // Repaint a restyled window from within its cross-fade (see scrollmap for
     // the pattern). A theme switch attaches its stylesheets from inside a View
@@ -215,16 +223,17 @@ class CanvasGrid {
     this.resizeObserver?.disconnect();
     this._themeDisposable?.dispose();
     this._commands?.dispose();
-    window.removeEventListener("mousemove", this.handleWindowMouseMove);
-    window.removeEventListener("mouseup", this.handleWindowMouseUp);
-    window.removeEventListener("mousemove", this.handleResizeMove);
-    window.removeEventListener("mouseup", this.handleResizeUp);
+    const domWindow = this.getWindow();
+    domWindow.removeEventListener("mousemove", this.handleWindowMouseMove);
+    domWindow.removeEventListener("mouseup", this.handleWindowMouseUp);
+    domWindow.removeEventListener("mousemove", this.handleResizeMove);
+    domWindow.removeEventListener("mouseup", this.handleResizeUp);
   }
 
   // Read fonts and palette from CSS (custom properties on the wrapper) so the
   // canvas matches the active Lumine theme.
   readTheme() {
-    const cs = getComputedStyle(this.refs.wrap);
+    const cs = this.getWindow().getComputedStyle(this.refs.wrap);
     this.fontSize = parseFloat(cs.fontSize) || 12;
     this.fontFamily = cs.fontFamily || "monospace";
     this.font = `${this.fontSize}px ${this.fontFamily}`;
@@ -354,7 +363,7 @@ class CanvasGrid {
       this._themeSignature = this._paletteSignature();
       this.computeLayout();
     }
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = this.getWindow().devicePixelRatio || 1;
     this.dpr = dpr;
     this.viewW = w;
     this.viewH = h;
@@ -372,7 +381,7 @@ class CanvasGrid {
       return;
     }
     this._rafPending = true;
-    requestAnimationFrame(() => {
+    this.getWindow().requestAnimationFrame(() => {
       this._rafPending = false;
       this.draw();
     });
@@ -1060,8 +1069,9 @@ class CanvasGrid {
 
   handleResizeUp = () => {
     this._resizing = null;
-    window.removeEventListener("mousemove", this.handleResizeMove);
-    window.removeEventListener("mouseup", this.handleResizeUp);
+    const domWindow = this.getWindow();
+    domWindow.removeEventListener("mousemove", this.handleResizeMove);
+    domWindow.removeEventListener("mouseup", this.handleResizeUp);
   };
 
   // Show the col-resize cursor while hovering a grabbable edge.
@@ -1083,8 +1093,9 @@ class CanvasGrid {
         startX: e.clientX,
         startWidth: resizeHit.index ? this.indexWidth : this.colWidths[resizeHit.c],
       };
-      window.addEventListener("mousemove", this.handleResizeMove);
-      window.addEventListener("mouseup", this.handleResizeUp);
+      const domWindow = this.getWindow();
+      domWindow.addEventListener("mousemove", this.handleResizeMove);
+      domWindow.addEventListener("mouseup", this.handleResizeUp);
       e.preventDefault();
       return;
     }
@@ -1109,13 +1120,15 @@ class CanvasGrid {
       // Keep dragging active so Ctrl/Cmd-click-and-drag appends a range.
       this.startSelection(hit, this.hasSelection());
       this.dragging = true;
-      window.addEventListener("mousemove", this.handleWindowMouseMove);
-      window.addEventListener("mouseup", this.handleWindowMouseUp);
+      const domWindow = this.getWindow();
+      domWindow.addEventListener("mousemove", this.handleWindowMouseMove);
+      domWindow.addEventListener("mouseup", this.handleWindowMouseUp);
     } else {
       this.startSelection(hit);
       this.dragging = true;
-      window.addEventListener("mousemove", this.handleWindowMouseMove);
-      window.addEventListener("mouseup", this.handleWindowMouseUp);
+      const domWindow = this.getWindow();
+      domWindow.addEventListener("mousemove", this.handleWindowMouseMove);
+      domWindow.addEventListener("mouseup", this.handleWindowMouseUp);
     }
     this.scheduleDraw();
   };
@@ -1133,8 +1146,9 @@ class CanvasGrid {
 
   handleWindowMouseUp = () => {
     this.dragging = false;
-    window.removeEventListener("mousemove", this.handleWindowMouseMove);
-    window.removeEventListener("mouseup", this.handleWindowMouseUp);
+    const domWindow = this.getWindow();
+    domWindow.removeEventListener("mousemove", this.handleWindowMouseMove);
+    domWindow.removeEventListener("mouseup", this.handleWindowMouseUp);
   };
 
   handleKeyDown = (e) => {
