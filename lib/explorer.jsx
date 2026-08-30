@@ -4,7 +4,6 @@ const etch = require("@lumine-code/etch");
 const { INDEX_COLUMN } = require("./explorer-store");
 const { renderExplorerGrid } = require("./explorer-grid");
 const { autocompleteConsumer: AutocompleteConsumer } = require("./autocomplete");
-const { loadPlotlyFor } = require("./realm-runtime");
 
 // View modes, inspired by the nteract explorer's view toolbar. "grid" and
 // "summary" are tabular; the rest are Plotly charts.
@@ -317,9 +316,7 @@ class ResponsivePlot {
 
   constructor(props) {
     this.props = props;
-    this.restoreLayout = props.restoreLayout || null;
-    this.destroyed = false;
-    etch.initialize(this, { document: props.document });
+    etch.initialize(this);
     this.didMount();
   }
 
@@ -383,42 +380,19 @@ class ResponsivePlot {
 
   draw(method) {
     const { data, layout } = this.props.figure;
-    const restoredLayout = this.restoreLayout || {};
-    this.renderPromise = Promise.resolve(
-      this.Plotly[method](
-        this.refs.container,
-        data,
-        { ...layout, ...restoredLayout },
+    this.Plotly[method](this.refs.container, data, layout, {
+      responsive: true,
+      displaylogo: false,
+      scrollZoom: true,
+      modeBarButtonsToRemove: ["toImage"],
+      modeBarButtonsToAdd: [
         {
-          responsive: true,
-          displaylogo: false,
-          scrollZoom: true,
-          modeBarButtonsToRemove: ["toImage"],
-          modeBarButtonsToAdd: [
-            {
-              name: "Download plot as a png",
-              icon: this.Plotly.Icons.camera,
-              click: this.downloadImage,
-            },
-          ],
+          name: "Download plot as a png",
+          icon: this.Plotly.Icons.camera,
+          click: this.downloadImage,
         },
-      ),
-    );
-    if (method === "newPlot") this.restoreLayout = null;
-  }
-
-  whenReady() {
-    return Promise.resolve(this.runtimePromise).then(() => this.renderPromise);
-  }
-
-  captureState() {
-    const layout = this.refs.container?.layout;
-    if (!layout) return null;
-    try {
-      return JSON.parse(JSON.stringify(layout));
-    } catch {
-      return null;
-    }
+      ],
+    });
   }
 
   // Right-drag pans 2D plots (matching the right-button move on 3D, which Plotly
@@ -451,9 +425,8 @@ class ResponsivePlot {
     // release). Capture phase + stopPropagation keeps it from starting a drag.
     e.preventDefault();
     e.stopPropagation();
-    const domWindow = this.refs.container.ownerDocument.defaultView;
-    domWindow.addEventListener("mousemove", this.handleMouseMove);
-    domWindow.addEventListener("mouseup", this.handleMouseUp);
+    window.addEventListener("mousemove", this.handleMouseMove);
+    window.addEventListener("mouseup", this.handleMouseUp);
   };
 
   handleMouseMove = (e) => {
@@ -472,9 +445,8 @@ class ResponsivePlot {
 
   handleMouseUp = () => {
     this._pan = null;
-    const domWindow = this.refs.container.ownerDocument.defaultView;
-    domWindow.removeEventListener("mousemove", this.handleMouseMove);
-    domWindow.removeEventListener("mouseup", this.handleMouseUp);
+    window.removeEventListener("mousemove", this.handleMouseMove);
+    window.removeEventListener("mouseup", this.handleMouseUp);
   };
 
   // Escape clears any active box/lasso selection (un-dims all points).
@@ -501,11 +473,11 @@ class ResponsivePlot {
   };
 
   didMount() {
-    const domDocument = this.refs.container.ownerDocument;
+    this.Plotly = require("plotly.js-dist");
     this.refs.container.addEventListener("contextmenu", this.preventContextMenu, true);
     this.refs.container.addEventListener("mousedown", this.handleMouseDown, true);
-    domDocument.addEventListener("keydown", this.handleKeyDown);
-    this.resizeObserver = new domDocument.defaultView.ResizeObserver(() => {
+    document.addEventListener("keydown", this.handleKeyDown);
+    this.resizeObserver = new ResizeObserver(() => {
       const gd = this.refs.container;
       if (!gd) {
         return;
@@ -518,12 +490,7 @@ class ResponsivePlot {
       }
     });
     this.resizeObserver.observe(this.refs.container);
-    this.runtimePromise = loadPlotlyFor(domDocument).then((Plotly) => {
-      if (this.destroyed) return;
-      this.Plotly = Plotly;
-      this.tryDraw();
-      return this.renderPromise;
-    });
+    this.tryDraw();
   }
 
   update(props) {
@@ -537,17 +504,14 @@ class ResponsivePlot {
   }
 
   destroy() {
-    this.destroyed = true;
     this.teardown();
     return etch.destroy(this);
   }
 
   teardown() {
-    const domDocument = this.refs.container?.ownerDocument;
-    const domWindow = domDocument?.defaultView;
-    domDocument?.removeEventListener("keydown", this.handleKeyDown);
-    domWindow?.removeEventListener("mousemove", this.handleMouseMove);
-    domWindow?.removeEventListener("mouseup", this.handleMouseUp);
+    document.removeEventListener("keydown", this.handleKeyDown);
+    window.removeEventListener("mousemove", this.handleMouseMove);
+    window.removeEventListener("mouseup", this.handleMouseUp);
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
@@ -693,7 +657,7 @@ function renderChartControls({ store, view, onStretch }) {
 }
 
 // The plot body only; axis controls live in the header (ChartControls).
-function renderChartPlot({ store, view, plotRef, onPointClick, restoreLayout }) {
+function renderChartPlot({ store, view, plotRef, onPointClick }) {
   const payload = store.payload;
   if (!payload || !Array.isArray(payload.columns) || payload.columns.length === 0) {
     return renderMessage("No columns available to plot");
@@ -732,7 +696,6 @@ function renderChartPlot({ store, view, plotRef, onPointClick, restoreLayout }) 
             key={plotKey}
             figure={figure}
             is3D={threeD}
-            restoreLayout={restoreLayout}
             onPointClick={onPointClick}
           />
         ) : ready ? (
@@ -945,7 +908,7 @@ class ExpressionEditor {
 class Explorer {
   constructor(props) {
     this.props = props;
-    etch.initialize(this, { document: props.document });
+    etch.initialize(this);
     this.didMount();
     this.storeSubscription = this.props.store.onDidUpdate(() => this.update());
   }
@@ -1001,7 +964,7 @@ class Explorer {
     const store = this.props.store;
     if (store.focusToken !== this._lastFocusToken && !store.loading && store.payload) {
       this._lastFocusToken = store.focusToken;
-      this.element.ownerDocument.defaultView.requestAnimationFrame(() => this.focusBody());
+      requestAnimationFrame(() => this.focusBody());
     }
   }
 
@@ -1050,7 +1013,7 @@ class Explorer {
       return;
     }
 
-    const active = this.element.ownerDocument.activeElement;
+    const active = document.activeElement;
     const currentIndex = items.indexOf(active);
     const nextIndex =
       currentIndex === -1
@@ -1063,13 +1026,17 @@ class Explorer {
 
   confirmToolbarItem(event) {
     event?.stopPropagation?.();
-    const active = this.element.ownerDocument.activeElement;
+    const active = document.activeElement;
     if (!this.refs.toolbar?.contains(active)) {
       this.focusToolbar();
       return;
     }
 
-    if (active?.matches?.("button, select, input")) {
+    if (
+      active instanceof HTMLButtonElement ||
+      active instanceof HTMLSelectElement ||
+      active instanceof HTMLInputElement
+    ) {
       active.click();
     }
   }
@@ -1160,7 +1127,6 @@ class Explorer {
                   this.plot = component;
                 },
                 onPointClick: this.handlePointClick,
-                restoreLayout: this.props.surfaceState?.plotLayout,
               })
             : null}
         </div>
