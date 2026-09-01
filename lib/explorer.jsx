@@ -532,6 +532,30 @@ class ResponsivePlot {
   }
 }
 
+class ExplorerSelectBox {
+  constructor(props) {
+    this.props = props;
+    this.controller = lumine.menu.createSelectBox({
+      items: props.items,
+      value: props.value,
+      ariaLabel: props.ariaLabel,
+      className: props.className,
+    });
+    this.element = this.controller.element;
+    this.changeDisposable = this.controller.onDidChange(({ value }) => this.props.onChange(value));
+  }
+
+  update(props) {
+    this.props = props;
+    this.controller.setItems(props.items, { value: props.value });
+  }
+
+  destroy() {
+    this.changeDisposable.dispose();
+    this.controller.destroy();
+  }
+}
+
 // Single-select axis dropdown. `optional` adds a "(none)" entry. When `axisKey`
 // + `onStretch` are given, the label also carries −/+ buttons that stretch /
 // compress that plot axis.
@@ -560,18 +584,14 @@ function renderAxisSelect({ label, value, options, optional, onChange, axisKey, 
             </button>
           </>
         ) : null}
-        <select
-          className="input-select"
+        <ExplorerSelectBox
+          key={`${label}-select`}
+          className="explorer-axis-select"
+          ariaLabel={`${label} axis`}
+          items={optional ? [{ value: "", label: "(none)" }, ...options] : options}
           value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {optional ? <option value="">(none)</option> : null}
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={onChange}
+        />
       </div>
     </div>
   );
@@ -986,9 +1006,7 @@ class Explorer {
     }
 
     return Array.from(
-      toolbar.querySelectorAll(
-        "button:not([disabled]), select:not([disabled]), input:not([disabled])",
-      ),
+      toolbar.querySelectorAll("button:not([disabled]), input:not([disabled])"),
     ).filter((item) => item.offsetParent !== null);
   }
 
@@ -1032,11 +1050,7 @@ class Explorer {
       return;
     }
 
-    if (
-      active instanceof HTMLButtonElement ||
-      active instanceof HTMLSelectElement ||
-      active instanceof HTMLInputElement
-    ) {
+    if (active instanceof HTMLButtonElement || active instanceof HTMLInputElement) {
       active.click();
     }
   }

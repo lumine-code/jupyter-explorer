@@ -143,7 +143,7 @@
           align-items: stretch;
 
           .btn,
-          .input-select {
+          .explorer-axis-select {
             border-radius: 0;
           }
 
@@ -164,7 +164,7 @@
           /* Keep the focused/hovered element's border above its neighbours. */
           .btn:hover,
           .btn:focus,
-          .input-select:focus {
+          .explorer-axis-select:focus {
             position: relative;
             z-index: 1;
           }

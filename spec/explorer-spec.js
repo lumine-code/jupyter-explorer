@@ -107,6 +107,10 @@ describe("data explorer", () => {
     // nothing and take the whole patch down with them.
     const controls = component.element.querySelectorAll(".explorer-control");
     expect(controls.length).toBeGreaterThan(0);
+    expect(component.element.querySelectorAll(".explorer-axis-select[role=combobox]").length).toBe(
+      4,
+    );
+    expect(component.element.querySelector("select")).toBeNull();
   });
 
   it("focuses the plot surface on a left-button Plotly interaction", () => {
