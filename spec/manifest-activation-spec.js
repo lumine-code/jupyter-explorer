@@ -30,5 +30,14 @@ describe("the manifest's activation strategy", () => {
     const css = fs.readFileSync(path.join(__dirname, "..", "styles", "main.css"), "utf8");
     expect(css).not.toContain("--canvas-grid-");
     expect(css).not.toContain(".canvas-grid-");
+    expect(css).toMatch(
+      /\.jupyter-explorer \{[^}]*width: 100%;[^}]*background: var\(--base-background-color\);/,
+    );
+    expect(css).toMatch(/\.jupyter-explorer \.explorer \{[^}]*width: 100%;[^}]*padding: 0;/);
+    expect(css).toMatch(/\.explorer-body \{[^}]*width: 100%;/);
+    expect(css).toMatch(/\.explorer-grid-view \{[^}]*width: 100%;/);
+    expect(css).toMatch(
+      /\.explorer-canvas-wrap \{[^}]*width: 100%;[^}]*background: var\(--base-background-color\);/,
+    );
   });
 });
