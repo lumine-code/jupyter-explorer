@@ -64,6 +64,7 @@
     }
   },
   "dependencies": {
+    "@lumine-code/canvas-grid": "github:lumine-code/canvas-grid#edceaad7a3dadeac49a284839ea0817d96b5b382",
     "@lumine-code/etch": "github:lumine-code/etch#caf7601cca3b105e502763391236bfaf86392e5a",
     "plotly.js-dist": "^4.0.0"
   },

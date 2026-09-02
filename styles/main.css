@@ -243,15 +243,19 @@
     }
   }
 
-  /* Canvas-rendered grid. The whole grid is one <canvas> on its own
-     compositing layer, so focusing/blurring the pane can't trigger the
-     cell-by-cell re-raster a sticky HTML table suffers. Native scrolling is
-     kept via an absolute sizer + a sticky canvas pinned over the viewport.
-     The custom properties below are read by the canvas renderer so it matches
-     the active theme. */
-  .explorer-canvas-wrap {
+  /* The shared grid keeps a base canvas and an interaction overlay pinned over
+     a native scrolling sizer. */
+  .explorer-canvas-host {
     flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .explorer-canvas-wrap {
     position: relative;
+    width: 100%;
+    height: 100%;
     overflow: auto;
     min-height: 0;
     outline: none;
@@ -261,31 +265,34 @@
        matches the editor font. */
     font-family: var(--editor-font-family);
 
-    --explorer-grid-text: var(--text-color);
-    --explorer-grid-muted: var(--text-color-subtle);
-    --explorer-grid-border: rgb(from var(--base-border-color) r g b / 0.35);
-    --explorer-grid-header-bg: var(--background-color-highlight);
-    --explorer-grid-selection: rgb(from var(--accent-color) r g b / 0.25);
-    --explorer-grid-flash: rgb(from var(--accent-color) r g b / 0.35);
-    --explorer-grid-header-selection: rgb(from var(--accent-color) r g b / 0.1);
-    /* Match the text-editor find highlight colours (search-panel uses these
-       same syntax variables for .find-result / .current-result). */
-    --explorer-grid-search: rgb(from var(--syntax-result-marker-color) r g b / 0.3);
-    --explorer-grid-search-current: rgb(
-      from var(--syntax-result-marker-color-selected) r g b / 0.55
-    );
+    --canvas-grid-row-height: 22px;
+    --canvas-grid-header-height: 22px;
+    --canvas-grid-text-color: var(--text-color);
+    --canvas-grid-muted-color: var(--text-color-subtle);
+    --canvas-grid-border-color: rgb(from var(--base-border-color) r g b / 0.35);
+    --canvas-grid-header-color: var(--background-color-highlight);
+    --canvas-grid-accent-color: var(--accent-color);
+    --canvas-grid-highlight-color: var(--syntax-result-marker-color);
+    --canvas-grid-current-highlight-color: var(--syntax-result-marker-color-selected);
   }
 
-  .explorer-canvas-sizer {
+  .canvas-grid-sizer {
     position: absolute;
     top: 0;
     left: 0;
   }
 
-  .explorer-canvas {
+  .canvas-grid-viewport {
     position: sticky;
     top: 0;
     left: 0;
+    display: block;
+  }
+
+  .canvas-grid-canvas,
+  .canvas-grid-overlay {
+    position: absolute;
+    inset: 0;
     display: block;
   }
 

@@ -62,7 +62,8 @@ describe("data explorer", () => {
     store.setPayload(tabularPayload());
     flush(component);
 
-    expect(component.element.querySelector(".explorer-canvas")).toBeTruthy();
+    expect(component.element.querySelector(".canvas-grid-canvas")).toBeTruthy();
+    expect(component.element.querySelector(".canvas-grid-overlay")).toBeTruthy();
     expect(component.element.querySelector(".explorer-canvas-wrap")).toBeTruthy();
   });
 
