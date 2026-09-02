@@ -2,80 +2,73 @@
 const etch = require("@lumine-code/etch");
 const { CanvasGrid } = require("@lumine-code/canvas-grid");
 
-function normalizeRestoreState(state) {
-  if (!state) return null;
-  if (state.selection || state.selectionMode) return state;
+function columnsForPayload(payload) {
+  return payload.columns.map((label, index) => ({ key: index, label }));
+}
+
+function rowHeaderFormatter(payload) {
+  return ({ windowRow }) => (payload.index ? payload.index[windowRow] : windowRow);
+}
+
+function callbacks(props, grid = null) {
   return {
-    selection: state.sel || null,
-    selections: state.selections || [],
-    selectionMode: state.selMode === "col" ? "column" : state.selMode || "cell",
-    scrollTop: state.scrollTop || 0,
-    scrollLeft: state.scrollLeft || 0,
+    formatRowHeader: rowHeaderFormatter(props.payload),
+    onSelectionChange: (...args) => {
+      if (props.selectedRow != null) props.onClearSelected?.();
+      props.onSelectionChange?.(...args);
+    },
+    onConfirm: ({ windowRow }) => {
+      const metadata = props.navMeta?.[windowRow];
+      if (metadata?.expandable) props.onDrill?.(windowRow, grid?.captureState() || null);
+    },
+    onSort: props.onSort,
+    onError: (error) =>
+      lumine.notifications.addError("Data Explorer grid failed", {
+        description: error.message,
+        dismissable: true,
+      }),
   };
 }
 
-class ExplorerCanvasGrid {
+function gridOptions(props) {
+  return {
+    className: "explorer-canvas-wrap",
+    commandPrefix: "jupyter-explorer",
+    ariaLabel: "Data explorer grid",
+    columns: columnsForPayload(props.payload),
+    rows: props.payload.rows,
+    copyRows: false,
+    clipboard: lumine.clipboard,
+    ...callbacks(props),
+  };
+}
+
+/**
+ * Etch-compatible mapping between explorer payloads and the host-neutral grid.
+ * CanvasGrid remains the sole owner of DOM, selection, scrolling, and teardown.
+ */
+class ExplorerCanvasGrid extends CanvasGrid {
   constructor(props) {
+    super(gridOptions(props));
     this.props = props;
-    this.wrapRef = { current: null };
-    etch.initialize(this);
-    this.mountGrid();
-  }
-
-  mountGrid() {
-    this.grid = new CanvasGrid(this.gridOptions());
-    this.wrapRef.current = this.grid.element;
-    this.element.appendChild(this.grid.element);
-    this.applyDecorations();
-    if (this.props.restoreState) {
-      this.restoreState(this.props.restoreState);
-      this.props.onRestored?.();
-    } else if (this.props.selectedRow != null) {
-      this.grid.scrollRowIntoView(this.props.selectedRow);
-    }
-  }
-
-  gridOptions() {
-    const payload = this.props.payload;
-    return {
-      className: "explorer-canvas-wrap",
-      commandPrefix: "jupyter-explorer",
-      ariaLabel: "Data explorer grid",
-      columns: payload.columns.map((label, index) => ({ key: index, label })),
-      rows: payload.rows,
-      clipboard: lumine.clipboard,
-      formatRowHeader: ({ windowRow }) => (payload.index ? payload.index[windowRow] : windowRow),
-      onSelectionChange: () => {
-        if (this.props.selectedRow != null) this.props.onClearSelected?.();
-      },
-      onConfirm: ({ windowRow }) => this.drillRow(windowRow),
-      onError: (error) =>
-        lumine.notifications.addError("Data Explorer grid failed", {
-          description: error.message,
-          dismissable: true,
-        }),
-    };
+    this.consumedRestoreState = null;
+    this.updateOptions(callbacks(props, this));
+    this.applyExternalState(null);
   }
 
   update(props) {
     const previous = this.props;
     this.props = props;
+    this.updateOptions(callbacks(props, this));
+
     if (previous.payload !== props.payload) {
-      this.grid.options.formatRowHeader = ({ windowRow }) =>
-        props.payload.index ? props.payload.index[windowRow] : windowRow;
-      this.grid.setRows({
-        columns: props.payload.columns.map((label, index) => ({ key: index, label })),
+      this.setRows({
+        columns: columnsForPayload(props.payload),
         rows: props.payload.rows,
       });
-      if (props.restoreState) {
-        this.restoreState(props.restoreState);
-        props.onRestored?.();
-      }
     }
     this.applyDecorations();
-    if (previous.selectedRow !== props.selectedRow && props.selectedRow != null) {
-      this.grid.scrollRowIntoView(props.selectedRow);
-    }
+    this.applyExternalState(previous);
     return Promise.resolve();
   }
 
@@ -83,65 +76,33 @@ class ExplorerCanvasGrid {
     const matches = this.props.searchMatches || [];
     const current =
       this.props.searchCurrentIndex >= 0 ? matches[this.props.searchCurrentIndex] : null;
-    this.grid.setHighlights(matches, current);
-    this.grid.setHighlightRow(this.props.selectedRow);
+    this.setHighlights(matches, current);
+    this.setHighlightRow(this.props.selectedRow);
   }
 
-  drillRow(row) {
-    const metadata = this.props.navMeta?.[row];
-    if (metadata?.expandable) this.props.onDrill?.(row, this.captureState());
-  }
-
-  focus() {
-    this.grid.focus();
-  }
-
-  hasSelection() {
-    return Boolean(this.grid.selection);
-  }
-
-  activeCell() {
-    const { row, column } = this.grid.activeCell();
-    return { r: row, c: column };
-  }
-
-  revealSearchMatch(cell) {
-    this.grid.revealCell(cell);
-    this.applyDecorations();
-  }
-
-  selectCells(cells) {
-    this.grid.selectCells(cells);
-    this.applyDecorations();
-  }
-
-  copySelection() {
-    return this.grid.copySelection();
-  }
-
-  captureState() {
-    const state = this.grid.captureState();
-    return {
-      sel: state.selection,
-      selections: state.selections,
-      selMode: state.selectionMode === "column" ? "col" : state.selectionMode,
-      scrollTop: state.scrollTop,
-      scrollLeft: state.scrollLeft,
-    };
-  }
-
-  restoreState(state) {
-    this.grid.restoreState(normalizeRestoreState(state));
+  applyExternalState(previous) {
+    const restoreState = this.props.restoreState;
+    if (!restoreState) this.consumedRestoreState = null;
+    if (restoreState && restoreState !== this.consumedRestoreState) {
+      this.consumedRestoreState = restoreState;
+      this.restoreState(restoreState);
+      this.props.onRestored?.();
+      return;
+    }
+    if (
+      this.props.selectedRow != null &&
+      (!previous || previous.selectedRow !== this.props.selectedRow)
+    ) {
+      this.scrollRowIntoView(this.props.selectedRow);
+    }
   }
 
   destroy() {
-    this.wrapRef.current = null;
-    this.grid?.destroy();
-    return etch.destroy(this);
-  }
-
-  render() {
-    return <div className="explorer-canvas-host" />;
+    const props = this.props;
+    this.props = null;
+    props?.onDestroy?.(this);
+    super.destroy();
+    return Promise.resolve();
   }
 }
 
@@ -163,6 +124,9 @@ function renderExplorerGrid(store) {
       onDrill={(row, state) => store.drillInto(row, state)}
       restoreState={store.pendingRestore}
       onRestored={() => store.clearPendingRestore()}
+      onDestroy={(grid) => {
+        if (store.activeGrid === grid) store.setActiveGrid(null);
+      }}
       selectedRow={store.selectedRow}
       searchMatches={store.searchMatches}
       searchCurrentIndex={store.searchCurrentIndex}
@@ -171,4 +135,4 @@ function renderExplorerGrid(store) {
   );
 }
 
-module.exports = { ExplorerCanvasGrid, renderExplorerGrid };
+module.exports = { ExplorerCanvasGrid, gridOptions, renderExplorerGrid };

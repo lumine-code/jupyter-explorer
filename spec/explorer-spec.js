@@ -72,33 +72,33 @@ describe("data explorer", () => {
     flush(component);
     const adapter = store.activeGrid;
     expect(adapter).toBeTruthy();
-    expect(adapter.hasSelection()).toBe(false);
+    expect(adapter.normalizedSelections()).toEqual([]);
 
     adapter.selectCells([
-      { r: 0, c: 0 },
-      { r: 2, c: 2 },
+      { row: 0, column: 0 },
+      { row: 2, column: 2 },
     ]);
-    expect(adapter.hasSelection()).toBe(true);
-    expect(adapter.activeCell()).toEqual({ r: 2, c: 2 });
+    expect(adapter.normalizedSelections().length).toBe(2);
+    expect(adapter.activeCell()).toEqual({ row: 2, column: 2 });
 
-    store.setSearchMatches([{ r: 1, c: 1 }], 0);
+    store.setSearchMatches([{ row: 1, column: 1 }], 0);
     flush(component);
-    expect(adapter.grid.highlights).toEqual([{ row: 1, column: 1 }]);
-    expect(adapter.grid.currentHighlight).toEqual({ row: 1, column: 1 });
+    expect(adapter.highlights).toEqual([{ row: 1, column: 1 }]);
+    expect(adapter.currentHighlight).toEqual({ row: 1, column: 1 });
     expect(adapter.captureState().selections.length).toBe(2);
 
-    adapter.grid.startSelection({ zone: "body", row: 2, column: 2 });
-    adapter.grid.moveActiveSelection(-1, -1, true);
-    expect(adapter.grid.publicActiveCell()).toEqual({
+    adapter.startSelection({ zone: "body", row: 2, column: 2 });
+    adapter.moveActiveSelection(-1, -1, true);
+    expect(adapter.publicActiveCell()).toEqual({
       row: 1,
       column: 1,
       windowRow: 1,
     });
-    expect(adapter.grid.normalizedSelections()).toEqual([{ r0: 1, c0: 1, r1: 2, c1: 2 }]);
+    expect(adapter.normalizedSelections()).toEqual([{ r0: 1, c0: 1, r1: 2, c1: 2 }]);
 
-    adapter.grid.selectColumnAt(1);
-    expect(adapter.grid.selectionMode).toBe("column");
-    expect(adapter.grid.normalizedSelections()).toEqual([{ r0: 0, c0: 1, r1: 2, c1: 1 }]);
+    adapter.selectColumnAt(1);
+    expect(adapter.selectionMode).toBe("column");
+    expect(adapter.normalizedSelections()).toEqual([{ r0: 0, c0: 1, r1: 2, c1: 1 }]);
   });
 
   it("falls back to the repr when the value is not tabular", () => {

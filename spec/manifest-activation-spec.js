@@ -29,7 +29,6 @@ describe("the manifest's activation strategy", () => {
   it("inherits shared grid tokens and renderer-owned structure", () => {
     const css = fs.readFileSync(path.join(__dirname, "..", "styles", "main.css"), "utf8");
     expect(css).not.toContain("--canvas-grid-");
-    expect(css).not.toContain(".canvas-grid-viewport");
-    expect(css).not.toContain(".canvas-grid-canvas");
+    expect(css).not.toContain(".canvas-grid-");
   });
 });
