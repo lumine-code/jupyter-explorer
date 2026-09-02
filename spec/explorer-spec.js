@@ -67,6 +67,27 @@ describe("data explorer", () => {
     expect(component.element.querySelector(".explorer-canvas-wrap")).toBeTruthy();
   });
 
+  it("adapts explorer search and selection state to the shared grid", () => {
+    store.setPayload(tabularPayload());
+    flush(component);
+    const adapter = store.activeGrid;
+    expect(adapter).toBeTruthy();
+    expect(adapter.hasSelection()).toBe(false);
+
+    adapter.selectCells([
+      { r: 0, c: 0 },
+      { r: 2, c: 2 },
+    ]);
+    expect(adapter.hasSelection()).toBe(true);
+    expect(adapter.activeCell()).toEqual({ r: 2, c: 2 });
+
+    store.setSearchMatches([{ r: 1, c: 1 }], 0);
+    flush(component);
+    expect(adapter.grid.highlights).toEqual([{ row: 1, column: 1 }]);
+    expect(adapter.grid.currentHighlight).toEqual({ row: 1, column: 1 });
+    expect(adapter.captureState().selections.length).toBe(2);
+  });
+
   it("falls back to the repr when the value is not tabular", () => {
     store.setPayload({ kind: "scalar", name: "x", repr: "42" });
     flush(component);
