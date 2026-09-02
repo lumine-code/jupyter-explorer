@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const manifest = require(path.join(__dirname, "..", "package.json"));
 const main = require(path.join(__dirname, "..", manifest.main));
@@ -23,5 +24,12 @@ describe("the manifest's activation strategy", () => {
     for (const method of declared) {
       expect(typeof main[method]).toBe("function");
     }
+  });
+
+  it("inherits shared grid tokens and renderer-owned structure", () => {
+    const css = fs.readFileSync(path.join(__dirname, "..", "styles", "main.css"), "utf8");
+    expect(css).not.toContain("--canvas-grid-");
+    expect(css).not.toContain(".canvas-grid-viewport");
+    expect(css).not.toContain(".canvas-grid-canvas");
   });
 });

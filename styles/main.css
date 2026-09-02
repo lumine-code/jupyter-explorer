@@ -256,7 +256,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
     min-height: 0;
     outline: none;
     user-select: none;
@@ -264,36 +264,6 @@
     /* Read by the canvas renderer (getComputedStyle().fontFamily) so the grid
        matches the editor font. */
     font-family: var(--editor-font-family);
-
-    --canvas-grid-row-height: 22px;
-    --canvas-grid-header-height: 22px;
-    --canvas-grid-text-color: var(--text-color);
-    --canvas-grid-muted-color: var(--text-color-subtle);
-    --canvas-grid-border-color: rgb(from var(--base-border-color) r g b / 0.35);
-    --canvas-grid-header-color: var(--background-color-highlight);
-    --canvas-grid-accent-color: var(--accent-color);
-    --canvas-grid-highlight-color: var(--syntax-result-marker-color);
-    --canvas-grid-current-highlight-color: var(--syntax-result-marker-color-selected);
-  }
-
-  .canvas-grid-sizer {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-
-  .canvas-grid-viewport {
-    position: sticky;
-    top: 0;
-    left: 0;
-    display: block;
-  }
-
-  .canvas-grid-canvas,
-  .canvas-grid-overlay {
-    position: absolute;
-    inset: 0;
-    display: block;
   }
 
   .explorer-table-wrapper {

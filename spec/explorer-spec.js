@@ -86,6 +86,19 @@ describe("data explorer", () => {
     expect(adapter.grid.highlights).toEqual([{ row: 1, column: 1 }]);
     expect(adapter.grid.currentHighlight).toEqual({ row: 1, column: 1 });
     expect(adapter.captureState().selections.length).toBe(2);
+
+    adapter.grid.startSelection({ zone: "body", row: 2, column: 2 });
+    adapter.grid.moveActiveSelection(-1, -1, true);
+    expect(adapter.grid.publicActiveCell()).toEqual({
+      row: 1,
+      column: 1,
+      windowRow: 1,
+    });
+    expect(adapter.grid.normalizedSelections()).toEqual([{ r0: 1, c0: 1, r1: 2, c1: 2 }]);
+
+    adapter.grid.selectColumnAt(1);
+    expect(adapter.grid.selectionMode).toBe("column");
+    expect(adapter.grid.normalizedSelections()).toEqual([{ r0: 0, c0: 1, r1: 2, c1: 1 }]);
   });
 
   it("falls back to the repr when the value is not tabular", () => {
