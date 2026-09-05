@@ -845,10 +845,9 @@ function renderPayloadMeta({ store, view }) {
 }
 
 /**
- * Multi-line expression editor, built the same way as the watch editor
- * (lumine.workspace.buildTextEditor + assignLanguageMode, no textEditors.add which
- * would reset the grammar to plain text). Live edits update the stored
- * expression; Enter confirms / loads, Shift+Enter inserts a newline (keymaps).
+ * Multi-line expression editor, built the same way as the watch editor.
+ * Live edits update the stored expression; Enter confirms / loads,
+ * Shift+Enter inserts a newline (keymaps).
  */
 class ExpressionEditor {
   constructor(props) {
@@ -869,6 +868,7 @@ class ExpressionEditor {
     if (this.props.grammar) {
       lumine.grammars.assignLanguageMode(this.editor.getBuffer(), this.props.grammar.scopeName);
     }
+    this._textEditorDisposable = lumine.textEditors.add(this.editor, { role: "input" });
     if (this.props.value) {
       this.editor.setText(this.props.value);
     }
@@ -912,6 +912,7 @@ class ExpressionEditor {
   destroy() {
     this._changeDisposable?.dispose();
     this._commands?.dispose();
+    this._textEditorDisposable?.dispose();
     this.editor?.destroy();
     return etch.destroy(this);
   }
