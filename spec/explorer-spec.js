@@ -163,6 +163,53 @@ describe("data explorer", () => {
     expect(document.activeElement).toBe(plotSurface);
   });
 
+  it("rethemes Plotly charts when the active theme changes", async () => {
+    store.setPayload(tabularPayload());
+    store.setViewMode("scatter");
+    flush(component);
+    jasmine.attachToDOM(component.element);
+    const container = component.plot.refs.container;
+    component.plot._drawn = true;
+    component.plot.themeSignature = JSON.stringify(Explorer.plotTheme(container));
+    spyOn(component.plot, "draw");
+
+    await lumine.themes.updateAppearance(() => {
+      container.style.setProperty("--text-color", "rgb(12, 34, 56)");
+    });
+    await null;
+
+    expect(component.plot.draw).toHaveBeenCalled();
+    const [method, theme] = component.plot.draw.calls.mostRecent().args;
+    expect(method).toBe("react");
+    expect(theme.text).toBe("rgb(12, 34, 56)");
+  });
+
+  it("derives 2D and WebGL plot chrome from the active theme", () => {
+    const layout = Explorer.themedPlotLayout(
+      { xaxis: { title: "x" }, scene: { zaxis: { title: "z" } } },
+      {
+        text: "rgb(10, 20, 30)",
+        grid: "rgb(70, 80, 90)",
+        fontFamily: "Spec Sans",
+        fontSize: 13,
+      },
+      true,
+    );
+
+    expect(layout.font).toEqual({
+      color: "rgb(10, 20, 30)",
+      family: "Spec Sans",
+      size: 13,
+    });
+    expect(layout.xaxis).toEqual(
+      jasmine.objectContaining({ color: "rgb(10, 20, 30)", gridcolor: "rgb(70, 80, 90)" }),
+    );
+    expect(layout.scene.bgcolor).toBe("rgba(0,0,0,0)");
+    expect(layout.scene.zaxis).toEqual(
+      jasmine.objectContaining({ title: "z", zerolinecolor: "rgb(70, 80, 90)" }),
+    );
+  });
+
   it("reports a load failure in place of the data", () => {
     store.setError("boom");
     flush(component);

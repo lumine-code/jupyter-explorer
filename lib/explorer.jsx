@@ -1,6 +1,7 @@
 /** @jsx etch.dom */
 /** @jsxFrag etch.Fragment */
 const etch = require("@lumine-code/etch");
+const { CompositeDisposable } = require("lumine");
 const { INDEX_COLUMN } = require("./explorer-store");
 const { renderExplorerGrid } = require("./explorer-grid");
 const { autocompleteConsumer: AutocompleteConsumer } = require("./autocomplete");
@@ -142,12 +143,80 @@ const BASE_LAYOUT = {
   autosize: true,
   margin: { l: 50, r: 20, t: 30, b: 40 },
   showlegend: false,
-  font: { color: "#9da5b4" },
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)",
   xaxis: {},
   yaxis: {},
 };
+
+function coalesce(callback) {
+  let pending = false;
+  return () => {
+    if (pending) return;
+    pending = true;
+    queueMicrotask(() => {
+      pending = false;
+      callback();
+    });
+  };
+}
+
+function resolvedThemeColor(element, variable, fallback) {
+  const probe = document.createElement("span");
+  probe.style.cssText = `position:absolute;visibility:hidden;color:var(${variable}, ${fallback})`;
+  element.appendChild(probe);
+  const color = getComputedStyle(probe).color || fallback;
+  probe.remove();
+  return color;
+}
+
+function plotTheme(element) {
+  const style = getComputedStyle(element);
+  return {
+    text: resolvedThemeColor(element, "--text-color", style.color || "rgb(157, 165, 180)"),
+    grid: resolvedThemeColor(element, "--base-border-color", "rgb(96, 96, 96)"),
+    fontFamily: style.fontFamily || undefined,
+    fontSize: Number.parseFloat(style.fontSize) || undefined,
+  };
+}
+
+function themedAxis(axis, theme) {
+  return {
+    color: theme.text,
+    gridcolor: theme.grid,
+    zerolinecolor: theme.grid,
+    ...axis,
+  };
+}
+
+function themedPlotLayout(layout, theme, threeDimensional = false) {
+  const themed = {
+    ...layout,
+    font: {
+      color: theme.text,
+      ...(theme.fontFamily ? { family: theme.fontFamily } : null),
+      ...(theme.fontSize ? { size: theme.fontSize } : null),
+      ...layout.font,
+    },
+    legend: {
+      bgcolor: "rgba(0,0,0,0)",
+      ...layout.legend,
+    },
+    xaxis: themedAxis(layout.xaxis || {}, theme),
+    yaxis: themedAxis(layout.yaxis || {}, theme),
+  };
+  if (threeDimensional || layout.scene) {
+    const scene = layout.scene || {};
+    themed.scene = {
+      bgcolor: "rgba(0,0,0,0)",
+      ...scene,
+      xaxis: themedAxis(scene.xaxis || {}, theme),
+      yaxis: themedAxis(scene.yaxis || {}, theme),
+      zaxis: themedAxis(scene.zaxis || {}, theme),
+    };
+  }
+  return themed;
+}
 
 // Is this a 3D plot? Only scatter / line with a Z axis selected.
 function is3D(view, zColumn) {
@@ -378,21 +447,38 @@ class ResponsivePlot {
     }
   }
 
-  draw(method) {
+  draw(method, theme = plotTheme(this.refs.container)) {
     const { data, layout } = this.props.figure;
-    this.Plotly[method](this.refs.container, data, layout, {
-      responsive: true,
-      displaylogo: false,
-      scrollZoom: true,
-      modeBarButtonsToRemove: ["toImage"],
-      modeBarButtonsToAdd: [
-        {
-          name: "Download plot as a png",
-          icon: this.Plotly.Icons.camera,
-          click: this.downloadImage,
-        },
-      ],
-    });
+    this.themeSignature = JSON.stringify(theme);
+    this.Plotly[method](
+      this.refs.container,
+      data,
+      themedPlotLayout(layout, theme, this.props.is3D),
+      {
+        responsive: true,
+        displaylogo: false,
+        scrollZoom: true,
+        modeBarButtonsToRemove: ["toImage"],
+        modeBarButtonsToAdd: [
+          {
+            name: "Download plot as a png",
+            icon: this.Plotly.Icons.camera,
+            click: this.downloadImage,
+          },
+        ],
+      },
+    );
+  }
+
+  applyTheme() {
+    if (!this._drawn || !this.refs.container || !this.Plotly) return;
+    const theme = plotTheme(this.refs.container);
+    const signature = JSON.stringify(theme);
+    if (signature === this.themeSignature) return;
+    // Plotly redraws its SVG and WebGL layers during `react`. Called from the
+    // theme notification's microtask, this lands before the View Transition
+    // captures its new state.
+    this.draw("react", theme);
   }
 
   // Right-drag pans 2D plots (matching the right-button move on 3D, which Plotly
@@ -474,6 +560,13 @@ class ResponsivePlot {
 
   didMount() {
     this.Plotly = require("plotly.js-dist");
+    const updateTheme = coalesce(() => this.applyTheme());
+    this.subscriptions = new CompositeDisposable(
+      lumine.styles.onDidAddStyleElement(updateTheme),
+      lumine.styles.onDidUpdateStyleElement(updateTheme),
+      lumine.styles.onDidRemoveStyleElement(updateTheme),
+      lumine.themes.onDidChangeActiveThemes(updateTheme),
+    );
     this.refs.container.addEventListener("contextmenu", this.preventContextMenu, true);
     this.refs.container.addEventListener("mousedown", this.handleMouseDown, true);
     document.addEventListener("keydown", this.handleKeyDown);
@@ -509,6 +602,8 @@ class ResponsivePlot {
   }
 
   teardown() {
+    this.subscriptions?.dispose();
+    this.subscriptions = null;
     document.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("mousemove", this.handleMouseMove);
     window.removeEventListener("mouseup", this.handleMouseUp);
@@ -1192,3 +1287,5 @@ class Explorer {
 }
 
 module.exports = Explorer;
+module.exports.plotTheme = plotTheme;
+module.exports.themedPlotLayout = themedPlotLayout;
