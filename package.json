@@ -39,6 +39,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "deserializers": {
+    "jupyter-explorer/ExplorerPane": "deserializeExplorerPane"
+  },
   "providedServices": {
     "jupyter.explorer": {
       "versions": {
