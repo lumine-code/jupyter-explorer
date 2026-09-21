@@ -70,7 +70,10 @@ describe("jupyter explorer pane persistence", () => {
     expect(restored.serialize()).toEqual(state);
     expect(lumine.deserializers.deserialize(restored.serialize())).toBe(restored);
     expect(loadedPackage.mainInitialized).toBe(true);
-    expect(loadedPackage.mainActivated).toBe(true);
+    // The deserializer runs before the initial package batch. It may restore
+    // the singleton from the facade, but the live activate hook waits for the
+    // normal bootstrap to finish.
+    expect(loadedPackage.mainActivated).toBe(false);
   });
 
   it("keeps the restored singleton through activation and recreates it after close", async () => {
