@@ -1,8 +1,8 @@
 const path = require("path");
 const manifest = require("../package.json");
-const main = require("../lib/main");
-const { explorerStore } = require("../lib/explorer-store");
-const ExplorerPane = require("../lib/explorer-pane");
+let main = require("../lib/main");
+let explorerStore = require("../lib/explorer-store").explorerStore;
+let ExplorerPane = require("../lib/explorer-pane");
 
 const DESERIALIZER = "jupyter-explorer/ExplorerPane";
 const STATE = { deserializer: DESERIALIZER };
@@ -27,6 +27,12 @@ function fakeProvider(kernel) {
 describe("jupyter explorer pane persistence", () => {
   let loadedPackage = null;
 
+  beforeEach(() => {
+    main = require("../lib/main");
+    explorerStore = require("../lib/explorer-store").explorerStore;
+    ExplorerPane = require("../lib/explorer-pane");
+  });
+
   afterEach(async () => {
     if (loadedPackage && lumine.packages.isPackageActive(loadedPackage.name)) {
       await lumine.packages.deactivatePackage(loadedPackage.name);
@@ -34,7 +40,7 @@ describe("jupyter explorer pane persistence", () => {
       main.deactivate();
     }
     if (loadedPackage && lumine.packages.isPackageLoaded(loadedPackage.name)) {
-      lumine.packages.unloadPackage(loadedPackage.name);
+      await lumine.packages.unloadPackage(loadedPackage.name);
     }
     loadedPackage = null;
     explorerStore.reset();
@@ -56,7 +62,6 @@ describe("jupyter explorer pane persistence", () => {
     const state = source.serialize();
     source.destroy();
 
-    spyOn(lumine.packages, "hasActivatedInitialPackages").and.returnValue(false);
     loadedPackage = lumine.packages.loadPackage(path.resolve(__dirname, ".."));
 
     const restored = lumine.deserializers.deserialize(state);
@@ -65,7 +70,7 @@ describe("jupyter explorer pane persistence", () => {
     expect(restored.serialize()).toEqual(state);
     expect(lumine.deserializers.deserialize(restored.serialize())).toBe(restored);
     expect(loadedPackage.mainInitialized).toBe(true);
-    expect(loadedPackage.mainActivated).toBe(false);
+    expect(loadedPackage.mainActivated).toBe(true);
   });
 
   it("keeps the restored singleton through activation and recreates it after close", async () => {

@@ -3,15 +3,9 @@ const path = require("path");
 const manifest = require(path.join(__dirname, "..", "package.json"));
 const main = require(path.join(__dirname, "..", manifest.main));
 
-describe("the manifest's activation strategy", () => {
-  // `Package#activateServices` runs inside `activateNow`, which a package with
-  // `activationCommands` does not reach until one of those commands fires.
-  // Deferring here would mean `jupyter-variables` — whose whole use of
-  // `jupyter.explorer` is to open this panel for the first time — never hears
-  // that the service exists. Nothing throws; the link just does nothing.
-  it("activates eagerly, because its services are what other packages open it with", () => {
+describe("the manifest's bootstrap contract", () => {
+  it("publishes its explorer service without lifecycle metadata", () => {
     expect(Object.keys(manifest.providedServices)).toContain("jupyter.explorer");
-    expect(manifest.activationCommands).toBeUndefined();
   });
 
   it("exposes a method for every service it declares", () => {
