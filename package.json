@@ -21,9 +21,6 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "You can explore whatever the cursor is on with {{ 'jupyter-explorer:explore' | keystroke }}"
-  ],
   "main": "./lib/main",
   "files": [
     "docs",
@@ -51,6 +48,11 @@
     "search.adapter": {
       "versions": {
         "1.0.0": "provideSearchAdapter"
+      }
+    },
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
       }
     }
   },
