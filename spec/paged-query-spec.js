@@ -161,6 +161,9 @@ function finish(request, value) {
   request.receive({ output_type: "stream", name: "stdout", text: JSON.stringify(value) + "\n" });
   request.receive({ output_type: "status", execution_state: "idle" });
 }
+async function flushQueries() {
+  for (let index = 0; index < 4; index++) await Promise.resolve();
+}
 function payload() {
   return {
     kind: "dataframe",
@@ -226,6 +229,89 @@ describe("paged explorer lifecycle", () => {
     expect(store.payload.row_count).toBe(1000);
     store.reset();
     expect(source.requests.at(-1).code).toContain('\\"action\\":\\"close\\"');
+  });
+
+  it("does not apply an already-rejected filter error after a new expression starts loading", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    finish(source.requests[0], payload());
+    store.addFilter({ column: 0, operator: "range", min: 100 });
+    source.requests
+      .at(-1)
+      .receive({ output_type: "error", ename: "ValueError", evalue: "old filter" });
+    // The transport promise has rejected, but its catch has not run yet.
+    store.load(source, "newData");
+    await flushQueries();
+    expect(store.currentExpression).toBe("newData");
+    expect(store.loading).toBe(true);
+    expect(store.error).toBeNull();
+    finish(source.requests.at(-1), { ...payload(), row_count: 25 });
+    expect(store.payload.row_count).toBe(25);
+    expect(store.error).toBeNull();
+  });
+
+  it("does not apply a filter rejection when context changes after the request gate", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    finish(source.requests[0], payload());
+    store.addFilter({ column: 0, operator: "range", min: 100 });
+    source.requests
+      .at(-1)
+      .receive({ output_type: "error", ename: "ValueError", evalue: "old filter" });
+    await Promise.resolve();
+    store.load(source, "newData");
+    await flushQueries();
+    expect(store.loading).toBe(true);
+    expect(store.error).toBeNull();
+  });
+
+  it("does not apply an already-rejected profile error after changing the profile column", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    finish(source.requests[0], { ...payload(), columns: ["n", "m"] });
+    store.loadProfile();
+    source.requests
+      .at(-1)
+      .receive({ output_type: "error", ename: "ValueError", evalue: "old profile" });
+    store.setProfileColumn(1);
+    store.loadProfile();
+    await flushQueries();
+    expect(store.profileColumn).toBe(1);
+    expect(store.profileLoading).toBe(true);
+    expect(store.profileError).toBeNull();
+    finish(source.requests.at(-1), { column: 1, label: "m", total: 10000 });
+    await flushQueries();
+    expect(store.profile.label).toBe("m");
+    expect(store.profileError).toBeNull();
+  });
+
+  it("does not apply an already-resolved profile after changing the profile column", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    finish(source.requests[0], { ...payload(), columns: ["n", "m"] });
+    store.loadProfile();
+    finish(source.requests.at(-1), { column: 0, label: "n", total: 10000 });
+    // The request's gate sees the old column as current. Its consumer still
+    // must stand down if the user changes columns in the next microtask.
+    await Promise.resolve();
+    store.setProfileColumn(1);
+    await flushQueries();
+    expect(store.profile).toBeNull();
+    expect(store.profileColumn).toBe(1);
+    expect(store.profileLoading).toBe(false);
+  });
+
+  it("still reports a current filter failure", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    finish(source.requests[0], payload());
+    store.addFilter({ column: 0, operator: "range", min: 100 });
+    source.requests
+      .at(-1)
+      .receive({ output_type: "error", ename: "ValueError", evalue: "current filter" });
+    await flushQueries();
+    expect(store.error).toBe("ValueError: current filter");
+    expect(store.loading).toBe(false);
   });
 
   it("searches the kernel and drives grid navigation to matches beyond the sample", async () => {
