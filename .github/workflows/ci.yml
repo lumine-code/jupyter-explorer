@@ -53,6 +53,7 @@ jobs:
     timeout-minutes: 60
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_EXPLORER_TEST_PYTHON: ${{ github.workspace }}/.test-python/bin/python
     steps:
       - uses: actions/checkout@v6
         with:
@@ -61,6 +62,10 @@ jobs:
         with:
           repository: lumine-code/lumine
           path: lumine
+      - name: Prepare Python data integration tests
+        run: |
+          python3 -m venv .test-python
+          .test-python/bin/python -m pip install "pandas>=3,<4" "numpy>=2,<3" "pyarrow>=25,<26"
       - uses: actions/setup-node@v6
         with:
           node-version-file: lumine/.nvmrc

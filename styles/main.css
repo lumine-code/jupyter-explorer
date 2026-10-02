@@ -391,3 +391,63 @@
   white-space: pre-wrap;
   word-break: normal;
 }
+
+.jupyter-explorer {
+  .explorer-data-tools {
+    flex: 0 0 auto;
+    padding: 0.5em;
+    border-bottom: 1px solid var(--base-border-color);
+  }
+
+  .explorer-filter-form,
+  .explorer-active-filters,
+  .explorer-profile-stats,
+  .explorer-profile-values {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+
+  .explorer-filter-form .input-text {
+    width: 15em;
+  }
+  .explorer-filter-form label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+  }
+  .explorer-active-filters {
+    margin-top: 0.5em;
+  }
+  .explorer-column-profile {
+    padding: 0.75em;
+    overflow: auto;
+  }
+  .explorer-profile-label {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+  }
+  .explorer-profile-values,
+  .explorer-profile-bins {
+    margin-top: 0.75em;
+  }
+  .explorer-profile-bins {
+    display: flex;
+    align-items: end;
+    gap: 2px;
+  }
+  .explorer-profile-bin {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: end;
+    padding: 0.5em;
+  }
+  .explorer-bin-bar {
+    display: block;
+    width: 100%;
+    background: var(--accent-color);
+  }
+}

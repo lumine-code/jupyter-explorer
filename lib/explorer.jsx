@@ -60,6 +60,18 @@ function formatCell(value) {
 // Small footer note shown when the kernel capped the number of fetched rows.
 function renderGridFooter({ store }) {
   const payload = store.payload;
+  if (payload?.paged) {
+    return (
+      <div className="explorer-pager text-subtle">
+        <span>
+          {payload.row_count} matching rows of {payload.total_rows}; rows load as you scroll.
+        </span>
+        {store.searchLimited ? (
+          <span>Search found {store.searchTotal} matches; navigation shows the first 10,000.</span>
+        ) : null}
+      </div>
+    );
+  }
   if (!payload || !payload.truncated) {
     return null;
   }
@@ -893,6 +905,7 @@ function renderChartPlot({ store, view, plotRef, onPointClick }) {
 }
 
 function renderSummaryView({ store }) {
+  if (store.payload?.paged) return renderColumnProfile(store);
   const summary = store.payload && store.payload.summary;
   if (!summary || !Array.isArray(summary.rows)) {
     return renderMessage("No summary statistics available for this data");
@@ -919,6 +932,172 @@ function renderSummaryView({ store }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function renderColumnProfile(store) {
+  if (store.profileLoading) return renderMessage("Profiling all matching rows…");
+  if (store.profileError)
+    return renderMessage(<span className="text-error">{store.profileError}</span>);
+  const profile = store.profile;
+  if (!profile)
+    return renderMessage("Choose a column and click Profile to compute full-data statistics.");
+  return (
+    <div className="explorer-column-profile native-key-bindings" tabIndex={0}>
+      <div className="explorer-profile-label">
+        {profile.label}: exact profile of all {profile.total} matching rows (
+        {store.payload.total_rows} total).
+      </div>
+      <div className="explorer-profile-stats">
+        <span>Type: {profile.dtype || "mixed"}</span>
+        <span>Missing: {profile.nulls}</span>
+        <span>Distinct: {profile.distinct}</span>
+        {profile.min != null ? (
+          <span>
+            Min: {formatCell(profile.min)}; max: {formatCell(profile.max)}; mean:{" "}
+            {formatCell(profile.mean)}
+          </span>
+        ) : null}
+      </div>
+      {profile.histogram?.length ? (
+        <div
+          className="explorer-profile-bins"
+          aria-label="Histogram; click a bin to filter every view"
+        >
+          {profile.histogram.map((bin, index) => (
+            <button
+              key={index}
+              className="btn explorer-profile-bin"
+              title={`${bin.min} … ${bin.max}: ${bin.count} rows`}
+              onClick={() =>
+                store.addFilter({
+                  column: profile.column,
+                  operator: "range",
+                  min: bin.min,
+                  max: bin.max,
+                  maxExclusive: index < profile.histogram.length - 1,
+                })
+              }
+            >
+              <span
+                className="explorer-bin-bar"
+                style={{
+                  height: `${Math.max(2, (50 * bin.count) / Math.max(1, ...profile.histogram.map((entry) => entry.count)))}px`,
+                }}
+              />
+              <span>{bin.count}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div className="explorer-profile-values">
+        {profile.top?.map((entry, index) => (
+          <button
+            key={index}
+            className="btn"
+            title="Filter all views by this value"
+            onClick={() =>
+              store.addFilter({ column: profile.column, operator: "equals", value: entry.value })
+            }
+          >
+            {formatCell(entry.value)} ({entry.count})
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function renderDataTools(store) {
+  if (!store.payload?.paged || !store.payload.columns.length) return null;
+  return (
+    <div className="explorer-data-tools">
+      <div className="explorer-filter-form">
+        <label>
+          Column{" "}
+          <select
+            className="input-select"
+            value={store.profileColumn}
+            onChange={(event) => {
+              store.setProfileColumn(Number(event.target.value));
+            }}
+          >
+            {store.payload.columns.map((name, index) => (
+              <option key={index} value={index}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <select
+          className="input-select"
+          aria-label="Filter operation"
+          value={store.filterOperator}
+          onChange={(event) => {
+            store.filterOperator = event.target.value;
+            store._emitUpdate();
+          }}
+        >
+          <option value="contains">Contains</option>
+          <option value="equals">Equals</option>
+          <option value="range">Numeric Range</option>
+          <option value="missing">Missing</option>
+          <option value="present">Present</option>
+        </select>
+        <input
+          className="input-text native-key-bindings"
+          aria-label="Filter value"
+          placeholder={store.filterOperator === "range" ? "min..max" : "Value"}
+          value={store.filterValue}
+          disabled={["missing", "present"].includes(store.filterOperator)}
+          onInput={(event) => {
+            store.filterValue = event.target.value;
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") store.applyFilter();
+          }}
+        />
+        <button className="btn" disabled={store.loading} onClick={store.applyFilter}>
+          Apply Filter
+        </button>
+        <button
+          className="btn"
+          disabled={store.loading || store.profileLoading}
+          onClick={() => {
+            store.setViewMode("summary");
+          }}
+        >
+          Profile
+        </button>
+        <button className="btn" disabled={store.loading} onClick={store.refresh}>
+          Refresh Data
+        </button>
+      </div>
+      {store.filters.length ? (
+        <div className="explorer-active-filters">
+          {store.filters.map((filter) => (
+            <button
+              key={filter.column}
+              className="btn"
+              title="Remove this filter"
+              onClick={() => store.removeFilter(filter.column)}
+            >
+              {store.payload.columns[filter.column]} {filter.operator}{" "}
+              {filter.operator === "range"
+                ? `${filter.min ?? ""}..${filter.max ?? ""}`
+                : (filter.value ?? "")}{" "}
+              ×
+            </button>
+          ))}
+          <button className="btn" onClick={store.clearFilters}>
+            Clear Filters
+          </button>
+        </div>
+      ) : null}
+      {store.profileError && store.viewMode !== "summary" ? (
+        <span className="text-error">{store.profileError}</span>
+      ) : null}
     </div>
   );
 }
@@ -1137,6 +1316,14 @@ class Explorer {
         description: "Move focus back to the grid of values.",
         didDispatch: () => this.focusBody(),
       },
+      "jupyter-explorer:focus-filters": {
+        description: "Move focus to the linked filters, or the grid when filters are unavailable.",
+        didDispatch: () => {
+          const first = this.element.querySelector(".explorer-filter-form select");
+          if (first) first.focus({ preventScroll: true });
+          else this.focusBody();
+        },
+      },
     });
   }
 
@@ -1254,7 +1441,7 @@ class Explorer {
 
   handlePointClick = (rowIndex) => {
     const store = this.props.store;
-    store.setSelectedRow(rowIndex);
+    store.setSelectedRow(store.payload?.row_slots?.[rowIndex] ?? rowIndex);
     store.setViewMode("grid");
   };
 
@@ -1319,6 +1506,14 @@ class Explorer {
                 onPointClick: this.handlePointClick,
               })
             : null}
+          {hasData && isChart && store.payload?.paged ? (
+            <div className="explorer-pager text-subtle">
+              Charts use {store.payload.sample_rows} evenly spaced rows from{" "}
+              {store.payload.row_count} matching rows
+              {store.payload.sampled ? " (sample)" : " (all rows)"}. Filters and profiles cover
+              every matching row.
+            </div>
+          ) : null}
         </div>
       </>
     );
@@ -1357,6 +1552,7 @@ class Explorer {
               ? renderChartControls({ store, view, onStretch: this.handleStretch })
               : null}
           </div>
+          {renderDataTools(store)}
         </div>
 
         <div className="explorer-body" ref="body" tabIndex={0}>

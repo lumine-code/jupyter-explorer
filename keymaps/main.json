@@ -14,7 +14,7 @@
     "left": "jupyter-explorer:toolbar-left",
     "right": "jupyter-explorer:toolbar-right",
     "enter": "jupyter-explorer:toolbar-confirm",
-    "tab": "jupyter-explorer:focus-body",
+    "tab": "jupyter-explorer:focus-filters",
     "shift-tab": "jupyter-explorer:focus-expression"
   },
   "lumine-workspace .explorer-body": {

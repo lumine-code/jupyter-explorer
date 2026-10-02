@@ -28,6 +28,7 @@ This exists so a package that already knows about a value — a variables panel 
 ```ts
 type ExplorerService = {
   explore(kernel: JupyterKernel, expression: string): Promise<object>;
+  openFile?(kernel: JupyterKernel, filePath: string): Promise<object | undefined>;
 };
 ```
 
@@ -38,6 +39,12 @@ Required members:
 | `explore(kernel, expression)` | Show `expression` as evaluated by `kernel`, opening the panel if it is closed. Resolves with the pane item. |
 
 `kernel` is a `JupyterKernel` exactly as `jupyter.kernel` handed it over — see that service's contract. Passing anything else is an error; this package does not look kernels up for you.
+
+Optional members:
+
+| Member                       | Description                                                                                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openFile(kernel, filePath)` | Open a Parquet, Feather or Arrow IPC file with pyarrow in the given Python kernel. Resolves with the pane item, or `undefined` if no usable kernel is available. |
 
 ## Minimal example
 
@@ -67,6 +74,8 @@ module.exports = {
 The panel evaluates the expression through the kernel, so it runs the user's code. Only pass an expression the user asked for.
 
 Only Python kernels are supported today; another language resolves with the panel showing an explanation rather than throwing.
+
+Tabular values are held in a kernel session and requested by offset and limit. The grid, full-data sorting, linked filters and exact column profiles share that session. Chart values are a labelled sample of at most 1,000 evenly spaced matching rows. Changing expressions or closing the pane releases its previous session. `openFile` does not install pyarrow; its import failure explains that the selected kernel needs it.
 
 ## Teardown
 

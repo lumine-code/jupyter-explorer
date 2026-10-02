@@ -9,12 +9,13 @@
   "homepage": "https://github.com/lumine-code/jupyter-explorer#readme",
   "keywords": [
     "dataframe",
+    "parquet",
+    "arrow",
     "pandas",
     "numpy",
     "plotly",
     "grid",
-    "chart",
-    "data"
+    "chart"
   ],
   "version": "1.0.0",
   "license": "MIT",

@@ -11,7 +11,12 @@ function columnsForPayload(payload, { sortColumn = null, sortDirection = 0 } = {
 }
 
 function rowHeaderFormatter(payload) {
-  return ({ windowRow }) => (payload.index ? payload.index[windowRow] : windowRow);
+  return ({ windowRow, record }) =>
+    payload.paged
+      ? (record?._explorer?.index ?? windowRow)
+      : payload.index
+        ? payload.index[windowRow]
+        : windowRow;
 }
 
 function callbacks(props, grid = null) {
@@ -21,12 +26,15 @@ function callbacks(props, grid = null) {
       if (props.selectedRow != null) props.onClearSelected?.();
       props.onSelectionChange?.(...args);
     },
-    onConfirm: ({ windowRow }) => {
-      const metadata = props.navMeta?.[windowRow];
+    onConfirm: ({ windowRow, record }) => {
+      const metadata = props.payload.paged
+        ? record?._explorer?.navigation
+        : props.navMeta?.[windowRow];
       if (metadata?.expandable) props.onDrill?.(windowRow, grid?.captureState() || null);
     },
     onSort: props.onSort,
     onError: (error) =>
+      error.name !== "AbortError" &&
       lumine.notifications.addError("Data Explorer grid failed", {
         description: error.message,
         dismissable: true,
@@ -40,7 +48,9 @@ function gridOptions(props) {
     commandPrefix: "jupyter-explorer",
     ariaLabel: "Data explorer grid",
     columns: columnsForPayload(props.payload, props),
-    rows: props.payload.rows,
+    ...(props.payload.paged
+      ? { rowCount: props.payload.row_count, pageSize: 200, fetchRows: props.fetchRows }
+      : { rows: props.payload.rows }),
     copyRows: false,
     clipboard: lumine.clipboard,
     ...callbacks(props),
@@ -67,10 +77,14 @@ class ExplorerCanvasGrid extends CanvasGrid {
     this.updateOptions(callbacks(props, this));
 
     if (previous.payload !== props.payload) {
-      this.setRows({
+      const data = {
         columns: columnsForPayload(props.payload, props),
-        rows: props.payload.rows,
-      });
+        ...(props.payload.paged
+          ? { rowCount: props.payload.row_count, fetchRows: props.fetchRows, pageSize: 200 }
+          : { rows: props.payload.rows }),
+      };
+      if (props.payload.paged) this.setData(data);
+      else this.setRows(data);
     }
     this.applyDecorations();
     this.applyExternalState(previous);
@@ -125,6 +139,7 @@ function renderExplorerGrid(store) {
     <ExplorerCanvasGrid
       ref={store.setActiveGrid}
       payload={payload}
+      fetchRows={store.fetchRows}
       navMeta={payload.navmeta}
       onDrill={(row, state) => store.drillInto(row, state)}
       restoreState={store.pendingRestore}

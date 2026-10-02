@@ -45,7 +45,7 @@ describe("explorer query lifetime", () => {
     const source = kernel();
     store.load(source, "old");
     store.loadExpression("new");
-    finish(source.requests[1], { kind: "scalar", repr: "new result" });
+    finish(source.requests.at(-1), { kind: "scalar", repr: "new result" });
     finish(source.requests[0], { kind: "scalar", repr: "old result" });
 
     expect(store.payload.repr).toBe("new result");
