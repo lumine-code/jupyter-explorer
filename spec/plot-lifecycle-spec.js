@@ -58,6 +58,7 @@ describe("explorer plot lifetime", () => {
 
   it("purges a slow plot after its view has already closed", async () => {
     let finish;
+    const container = plot.refs.container;
     runtime.newPlot.and.returnValue(new Promise((resolve) => (finish = resolve)));
     const pending = plot.draw("newPlot", theme);
     await Promise.resolve();
@@ -66,7 +67,7 @@ describe("explorer plot lifetime", () => {
     await pending;
 
     expect(runtime.purge).toHaveBeenCalledTimes(2);
-    expect(plot.refs.container.on).not.toHaveBeenCalled();
+    expect(container.on).not.toHaveBeenCalled();
   });
 
   it("does not run a queued plot action after the view closes", async () => {
