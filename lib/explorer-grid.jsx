@@ -2,8 +2,12 @@
 const etch = require("@lumine-code/etch");
 const { CanvasGrid } = require("@lumine-code/canvas-grid");
 
-function columnsForPayload(payload) {
-  return payload.columns.map((label, index) => ({ key: index, label }));
+function columnsForPayload(payload, { sortColumn = null, sortDirection = 0 } = {}) {
+  return payload.columns.map((label, index) => ({
+    key: index,
+    label,
+    ...(index === sortColumn ? { sortDirection } : null),
+  }));
 }
 
 function rowHeaderFormatter(payload) {
@@ -35,7 +39,7 @@ function gridOptions(props) {
     className: "explorer-canvas-wrap",
     commandPrefix: "jupyter-explorer",
     ariaLabel: "Data explorer grid",
-    columns: columnsForPayload(props.payload),
+    columns: columnsForPayload(props.payload, props),
     rows: props.payload.rows,
     copyRows: false,
     clipboard: lumine.clipboard,
@@ -57,13 +61,14 @@ class ExplorerCanvasGrid extends CanvasGrid {
   }
 
   update(props) {
+    if (this.destroyed) return Promise.resolve();
     const previous = this.props;
     this.props = props;
     this.updateOptions(callbacks(props, this));
 
     if (previous.payload !== props.payload) {
       this.setRows({
-        columns: columnsForPayload(props.payload),
+        columns: columnsForPayload(props.payload, props),
         rows: props.payload.rows,
       });
     }
@@ -130,6 +135,9 @@ function renderExplorerGrid(store) {
       selectedRow={store.selectedRow}
       searchMatches={store.searchMatches}
       searchCurrentIndex={store.searchCurrentIndex}
+      sortColumn={store.sortColumn}
+      sortDirection={store.sortDirection}
+      onSort={store.sortByColumn}
       onClearSelected={() => store.setSelectedRow(null)}
     />
   );

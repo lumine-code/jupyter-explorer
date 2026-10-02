@@ -2,14 +2,14 @@
 
 Explore dataframes, arrays and nested objects in a searchable grid.
 
-A `repr` tells you a value is a dataframe with 40,000 rows. This shows you the rows: a grid you can scroll, sort, filter and drill into, with charts over the numeric columns and a breadcrumb trail back out.
+A `repr` tells you a value is a dataframe with 40,000 rows. This shows you the rows: a grid you can scroll, sort, search and drill into, with charts over the numeric columns and a breadcrumb trail back out.
 
 ## Features
 
 - **Any Python value**: dataframes, series, arrays, dicts, lists and nested combinations of them.
-- **A real grid**: scrolls, sorts and filters without pulling the whole value into the editor.
+- **A real grid**: scrolls, sorts and searches without pulling the whole value into the editor.
 - **Drill down**: open a cell that holds another structure and keep going; the breadcrumb walks back.
-- **Charts**: line, bar and scatter views over the numeric columns, picked from the toolbar.
+- **Charts**: line, scatter and heatmap views over the numeric columns, picked from the toolbar.
 - **Search**: the search panel queries the grid on screen.
 - **Keyboard driven**: move the selection, extend it by row or column, and page through without the mouse.
 
@@ -55,6 +55,8 @@ The expression field is a real editor, so it gets the kernel's grammar and, with
 
 The panel is bound to the kernel the value came from, so the status bar keeps showing that kernel while you are reading it, rather than the last file you were editing.
 
+The grid shows up to 1,000 rows and 100 columns. Sorting, search and charts use that displayed snapshot. Open the Summary view to request statistics over the full value.
+
 ## Customization
 
 Paste this into your `styles.css` to fit more rows on screen:
@@ -73,6 +75,7 @@ Paste this into your `styles.css` to fit more rows on screen:
 - `search.adapter`: provided to let the search panel query the grid on screen.
 - `jupyter.kernel`: consumed to read the active kernel and ask it to serialize a value.
 - `autocomplete.watch-editor`: consumed to offer completions in the expression field.
+- `background-tips.provider`: provided to show a tip about exploring values in an empty workspace.
 
 ## Contributing
 

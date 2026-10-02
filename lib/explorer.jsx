@@ -73,6 +73,7 @@ function renderGridFooter({ store }) {
 }
 
 function toNum(v) {
+  if (v == null || (typeof v === "string" && v.trim() === "")) return null;
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : null;
 }
@@ -385,6 +386,9 @@ class ResponsivePlot {
 
   constructor(props) {
     this.props = props;
+    this.destroyed = false;
+    this.drawToken = 0;
+    this.drawChain = Promise.resolve();
     etch.initialize(this);
     this.didMount();
   }
@@ -421,57 +425,91 @@ class ResponsivePlot {
     const center = (a + b) / 2;
     const half = ((b - a) / 2) * factor;
     const path = this.props.is3D ? `scene.${axisKey}.range` : `${axisKey}.range`;
-    this.Plotly.relayout(gd, { [path]: [center - half, center + half] });
+    this.plotAction(() => this.Plotly.relayout(gd, { [path]: [center - half, center + half] }));
   };
 
-  downloadImage = (gd) => {
-    this.Plotly.toImage(gd).then((dataUrl) => {
-      return lumine.window.downloadURL(dataUrl);
-    });
+  downloadImage = async (gd) => {
+    try {
+      const dataUrl = await this.Plotly.toImage(gd);
+      if (!this.destroyed) return lumine.window.downloadURL(dataUrl);
+    } catch (error) {
+      if (!this.destroyed) {
+        lumine.notifications.addError("Failed to download plot", { detail: error.message });
+      }
+    }
   };
+
+  plotAction(action) {
+    if (this.destroyed) return Promise.resolve();
+    return Promise.resolve()
+      .then(() => (this.destroyed ? undefined : action()))
+      .catch((error) => {
+        if (this.destroyed) return;
+        this.error = error;
+        return etch.update(this);
+      });
+  }
 
   // Draw only once the container has a real size. Plotly throws (e.g.
   // createImageData with zero width) if it renders into a 0-sized element, which
   // happens when the pane/plot is laid out but not yet visible.
   tryDraw() {
     const gd = this.refs.container;
-    if (!gd || !this.Plotly || gd.clientWidth === 0 || gd.clientHeight === 0) {
+    if (this.destroyed || !gd || !this.Plotly || gd.clientWidth === 0 || gd.clientHeight === 0) {
       return;
     }
-    if (this._drawn) {
-      this.draw("react");
-    } else {
-      this.draw("newPlot");
-      this._drawn = true;
-      gd.on("plotly_click", this.handlePlotClick);
-    }
+    return this.draw(this._drawn ? "react" : "newPlot");
   }
 
   draw(method, theme = plotTheme(this.refs.container)) {
-    const { data, layout } = this.props.figure;
-    this.themeSignature = JSON.stringify(theme);
-    this.Plotly[method](
-      this.refs.container,
-      data,
-      themedPlotLayout(layout, theme, this.props.is3D),
-      {
-        responsive: true,
-        displaylogo: false,
-        scrollZoom: true,
-        modeBarButtonsToRemove: ["toImage"],
-        modeBarButtonsToAdd: [
+    const gd = this.refs.container;
+    const figure = this.props.figure;
+    const threeDimensional = this.props.is3D;
+    const token = ++this.drawToken;
+    const job = this.drawChain.then(async () => {
+      if (this.destroyed || token !== this.drawToken) return;
+      try {
+        const hadPlot = this._drawn;
+        // A newer draw may have requested react while initialization was
+        // still pending. Decide only once that earlier work has settled.
+        method = hadPlot ? "react" : "newPlot";
+        await this.Plotly[method](
+          gd,
+          figure.data,
+          themedPlotLayout(figure.layout, theme, threeDimensional),
           {
-            name: "Download plot as a png",
-            icon: this.Plotly.Icons.camera,
-            click: this.downloadImage,
+            responsive: true,
+            displaylogo: false,
+            scrollZoom: true,
+            modeBarButtonsToRemove: ["toImage"],
+            modeBarButtonsToAdd: [
+              {
+                name: "Download plot as a png",
+                icon: this.Plotly.Icons.camera,
+                click: this.downloadImage,
+              },
+            ],
           },
-        ],
-      },
-    );
+        );
+        this._drawn = true;
+        this.themeSignature = JSON.stringify(theme);
+        if (!this.destroyed && !hadPlot) gd.on?.("plotly_click", this.handlePlotClick);
+      } catch (error) {
+        this._drawn = false;
+        if (!this.destroyed && token === this.drawToken) {
+          this.error = error;
+          await etch.update(this);
+        }
+      } finally {
+        if (this.destroyed) this.Plotly.purge(gd);
+      }
+    });
+    this.drawChain = job;
+    return job;
   }
 
   applyTheme() {
-    if (!this._drawn || !this.refs.container || !this.Plotly) return;
+    if (this.destroyed || !this._drawn || !this.refs.container || !this.Plotly) return;
     const theme = plotTheme(this.refs.container);
     const signature = JSON.stringify(theme);
     if (signature === this.themeSignature) return;
@@ -523,10 +561,12 @@ class ResponsivePlot {
     }
     const dx = ((e.clientX - p.startX) / p.xLen) * (p.xRange[1] - p.xRange[0]);
     const dy = ((e.clientY - p.startY) / p.yLen) * (p.yRange[1] - p.yRange[0]);
-    this.Plotly.relayout(gd, {
-      "xaxis.range": [p.xRange[0] - dx, p.xRange[1] - dx],
-      "yaxis.range": [p.yRange[0] + dy, p.yRange[1] + dy],
-    });
+    this.plotAction(() =>
+      this.Plotly.relayout(gd, {
+        "xaxis.range": [p.xRange[0] - dx, p.xRange[1] - dx],
+        "yaxis.range": [p.yRange[0] + dy, p.yRange[1] + dy],
+      }),
+    );
   };
 
   handleMouseUp = () => {
@@ -542,7 +582,7 @@ class ResponsivePlot {
     }
     const gd = this.refs.container;
     if (gd && this.Plotly) {
-      this.Plotly.restyle(gd, { selectedpoints: [null] });
+      this.plotAction(() => this.Plotly.restyle(gd, { selectedpoints: [null] }));
     }
   };
 
@@ -579,7 +619,7 @@ class ResponsivePlot {
       if (!this._drawn) {
         this.tryDraw();
       } else if (gd.clientWidth > 0 && gd.clientHeight > 0) {
-        this.Plotly.Plots.resize(gd);
+        this.plotAction(() => this.Plotly.Plots.resize(gd));
       }
     });
     this.resizeObserver.observe(this.refs.container);
@@ -590,6 +630,7 @@ class ResponsivePlot {
     const previous = this.props;
     this.props = props;
     if (previous.figure !== props.figure) {
+      this.drawToken++;
       this.error = null;
       return etch.update(this).then(() => this.tryDraw());
     }
@@ -597,8 +638,11 @@ class ResponsivePlot {
   }
 
   destroy() {
+    if (this.destroyed) return Promise.resolve();
+    this.destroyed = true;
+    this.drawToken++;
     this.teardown();
-    return etch.destroy(this);
+    return etch.destroySync(this);
   }
 
   teardown() {
@@ -614,16 +658,25 @@ class ResponsivePlot {
       this.refs.container.removeEventListener("contextmenu", this.preventContextMenu, true);
       this.refs.container.removeEventListener("mousedown", this.handleMouseDown, true);
     }
-    if (this._drawn && this.Plotly && this.refs.container) {
+    if (this.Plotly && this.refs.container) {
       this.Plotly.purge(this.refs.container);
     }
   }
 
   render() {
-    if (this.error) {
-      return renderMessage("Could not render this plot. Try different axes or another view.");
-    }
-    return <div ref="container" className="explorer-plotly" />;
+    return (
+      <div className="explorer-plotly-host" style={{ width: "100%", height: "100%" }}>
+        {this.error
+          ? renderMessage("Could not render this plot. Try different axes or another view.")
+          : null}
+        <div
+          ref="container"
+          key="chart"
+          className="explorer-plotly"
+          style={{ display: this.error ? "none" : "" }}
+        />
+      </div>
+    );
   }
 }
 
@@ -772,6 +825,22 @@ function renderChartControls({ store, view, onStretch }) {
 }
 
 // The plot body only; axis controls live in the header (ChartControls).
+const plotFigures = new WeakMap();
+
+function figureForStore(store, view, axes) {
+  const previous = plotFigures.get(store);
+  if (
+    previous &&
+    previous.payload === store.payload &&
+    previous.view === view &&
+    Object.keys(axes).every((key) => axes[key] === previous.axes[key])
+  )
+    return previous.figure;
+  const figure = buildFigure(store.payload, view, axes);
+  plotFigures.set(store, { payload: store.payload, view, axes, figure });
+  return figure;
+}
+
 function renderChartPlot({ store, view, plotRef, onPointClick }) {
   const payload = store.payload;
   if (!payload || !Array.isArray(payload.columns) || payload.columns.length === 0) {
@@ -795,7 +864,7 @@ function renderChartPlot({ store, view, plotRef, onPointClick }) {
 
   // Readiness: views that need a Y axis require it; parallel needs >=1 metric.
   const ready = spec.metrics ? store.yColumns.length > 0 : !spec.y || Boolean(store.yColumn);
-  const figure = ready ? buildFigure(payload, view, axes) : null;
+  const figure = ready ? figureForStore(store, view, axes) : null;
 
   // Remount Plotly when the chart type or its dimensionality changes so 2D<->3D
   // switches do a clean newPlot instead of a redraw with stale axes.
@@ -1024,6 +1093,8 @@ class ExpressionEditor {
 class Explorer {
   constructor(props) {
     this.props = props;
+    this.destroyed = false;
+    this.focusFrame = null;
     etch.initialize(this);
     this.didMount();
     this.storeSubscription = this.props.store.onDidUpdate(() => this.update());
@@ -1073,22 +1144,31 @@ class Explorer {
   // grid; once it has rendered (loading done, payload present) move focus back
   // to it so keyboard navigation continues without an extra click.
   update() {
+    if (this.destroyed) return Promise.resolve();
     return etch.update(this).then(() => this.didUpdate());
   }
 
   didUpdate() {
+    if (this.destroyed) return;
     const store = this.props.store;
     if (store.focusToken !== this._lastFocusToken && !store.loading && store.payload) {
       this._lastFocusToken = store.focusToken;
-      requestAnimationFrame(() => this.focusBody());
+      if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
+      this.focusFrame = requestAnimationFrame(() => {
+        this.focusFrame = null;
+        if (!this.destroyed) this.focusBody();
+      });
     }
   }
 
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
     this.storeSubscription?.dispose();
     this._bodyCommands?.dispose();
     this._toolbarCommands?.dispose();
-    return etch.destroy(this);
+    return etch.destroySync(this);
   }
 
   focusExpression = () => {
@@ -1249,6 +1329,7 @@ class Explorer {
     // jupyter-variables. It is intentionally decoupled from jupyter-repl's
     // current-kernel tracking so switching the focused editor never re-renders
     // or reloads the panel.
+    if (this.destroyed) return <div className="explorer" />;
     const store = this.props.store;
     const view = store.viewMode;
     const isChart = view !== "grid" && view !== "summary";
@@ -1289,3 +1370,4 @@ class Explorer {
 module.exports = Explorer;
 module.exports.plotTheme = plotTheme;
 module.exports.themedPlotLayout = themedPlotLayout;
+module.exports.ResponsivePlot = ResponsivePlot;

@@ -66,6 +66,11 @@ jobs:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install Python serialization test dependencies
+        run: python -m pip install "numpy==2.4.6" "pandas==3.0.3"
       - name: Install Linux build and headless-display dependencies
         run: |
           # A third-party repository on the runner image answering 403 must not
