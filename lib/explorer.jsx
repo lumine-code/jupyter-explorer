@@ -162,18 +162,6 @@ const BASE_LAYOUT = {
   yaxis: {},
 };
 
-function coalesce(callback) {
-  let pending = false;
-  return () => {
-    if (pending) return;
-    pending = true;
-    queueMicrotask(() => {
-      pending = false;
-      callback();
-    });
-  };
-}
-
 function resolvedThemeColor(element, variable, fallback) {
   const probe = document.createElement("span");
   probe.style.cssText = `position:absolute;visibility:hidden;color:var(${variable}, ${fallback})`;
@@ -612,12 +600,8 @@ class ResponsivePlot {
 
   didMount() {
     this.Plotly = require("plotly.js-dist");
-    const updateTheme = coalesce(() => this.applyTheme());
     this.subscriptions = new CompositeDisposable(
-      lumine.styles.onDidAddStyleElement(updateTheme),
-      lumine.styles.onDidUpdateStyleElement(updateTheme),
-      lumine.styles.onDidRemoveStyleElement(updateTheme),
-      lumine.themes.onDidChangeActiveThemes(updateTheme),
+      lumine.themes.onDidChangeVariables(() => this.applyTheme()),
     );
     this.refs.container.addEventListener("contextmenu", this.preventContextMenu, true);
     this.refs.container.addEventListener("mousedown", this.handleMouseDown, true);

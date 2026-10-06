@@ -65,7 +65,7 @@
         min-width: 180px;
 
         .explorer-object-type {
-          color: var(--accent-only-text-color);
+          color: var(--accent-link-color);
           white-space: nowrap;
         }
 
@@ -107,8 +107,8 @@
         border: none;
         background: transparent;
         padding: 1px 4px;
-        border-radius: var(--component-border-radius);
-        color: var(--accent-color);
+        border-radius: var(--ui-border-radius);
+        color: var(--accent-indicator-color);
         cursor: default;
         font-family: inherit;
         max-width: 22em;
@@ -163,13 +163,13 @@
           }
 
           > :first-child {
-            border-top-left-radius: var(--component-border-radius);
-            border-bottom-left-radius: var(--component-border-radius);
+            border-top-left-radius: var(--ui-border-radius);
+            border-bottom-left-radius: var(--ui-border-radius);
           }
 
           > :last-child {
-            border-top-right-radius: var(--component-border-radius);
-            border-bottom-right-radius: var(--component-border-radius);
+            border-top-right-radius: var(--ui-border-radius);
+            border-bottom-right-radius: var(--ui-border-radius);
           }
 
           /* Keep the focused/hovered element's border above its neighbours. */
@@ -448,6 +448,6 @@
   .explorer-bin-bar {
     display: block;
     width: 100%;
-    background: var(--accent-color);
+    background: var(--accent-indicator-color);
   }
 }
