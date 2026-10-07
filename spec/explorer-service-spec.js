@@ -1,6 +1,6 @@
 const { recordRequest, settle } = require("./request-fixture");
-const main = require("../lib/main");
-const { explorerStore } = require("../lib/explorer-store");
+let main;
+let explorerStore;
 
 // The Variables panel lives in another package and hands a name over through
 // `jupyter.explorer`. These pin the shape that seam depends on.
@@ -23,11 +23,10 @@ function fakeKernel(language = "python") {
     }),
   };
 }
-function fakeProvider(kernel, expression) {
+function fakeProvider(kernel) {
   return {
     removed: [],
     getActiveKernel: () => kernel,
-    getExpressionAtCursor: () => expression,
     onDidRemoveKernel(callback) {
       this.removed.push(callback);
       return {
@@ -37,6 +36,10 @@ function fakeProvider(kernel, expression) {
   };
 }
 describe("jupyter.explorer", () => {
+  beforeEach(() => {
+    main = require("../lib/main");
+    explorerStore = require("../lib/explorer-store").explorerStore;
+  });
   afterEach(() => {
     explorerStore.reset();
     for (const item of lumine.workspace.getPaneItems()) {
@@ -60,7 +63,7 @@ describe("jupyter.explorer", () => {
     main.activate();
     await settle();
     const kernel = fakeKernel();
-    main.consumeJupyterKernel(fakeProvider(kernel, "df.head()"));
+    main.consumeJupyterKernel(fakeProvider(kernel));
     main.consumeJupyterContext({
       getFocusedEditor: () => null,
       getExpressionAtCursor: () => "df.head()",
@@ -76,7 +79,7 @@ describe("jupyter.explorer", () => {
     main.activate();
     await settle();
     const kernel = fakeKernel();
-    main.consumeJupyterKernel(fakeProvider(kernel, ""));
+    main.consumeJupyterKernel(fakeProvider(kernel));
     await settle();
     await lumine.commands.dispatch(lumine.views.getView(lumine.workspace), "jupyter-explorer:open");
     expect(explorerStore.kernel).toBe(kernel);
@@ -97,7 +100,7 @@ describe("jupyter.explorer", () => {
     main.activate();
     await settle();
     const kernel = fakeKernel();
-    const provider = fakeProvider(kernel, "df");
+    const provider = fakeProvider(kernel);
     main.consumeJupyterKernel(provider);
     await settle();
     await main.provideExplorer().explore(kernel, "df");
@@ -112,7 +115,7 @@ describe("jupyter.explorer", () => {
     main.activate();
     await settle();
     const kernel = fakeKernel("julia");
-    main.consumeJupyterKernel(fakeProvider(kernel, "df"));
+    main.consumeJupyterKernel(fakeProvider(kernel));
     await settle();
     spyOn(lumine.notifications, "addWarning");
     await settle();

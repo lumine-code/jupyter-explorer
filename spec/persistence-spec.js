@@ -28,7 +28,6 @@ function fakeKernel() {
 function fakeProvider(kernel) {
   return {
     getActiveKernel: () => kernel,
-    getExpressionAtCursor: () => "frame",
     onDidRemoveKernel: () => ({
       dispose() {},
     }),
