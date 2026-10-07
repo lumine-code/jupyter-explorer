@@ -1,3 +1,4 @@
+const { recordRequest, settle } = require("./request-fixture");
 const { explorerStore, buildSerializerCode } = require("../lib/explorer-store");
 
 // This panel drives a Python kernel by generating helper code around the user's
@@ -17,13 +18,10 @@ const DEF = /^[ \t]*def[ \t]+([^\s(]+)[ \t]*\(/gm;
 const DEL = /^[ \t]*del[ \t]+([^\s\n]+)/gm;
 // Every token the rename could have touched, wherever it appears.
 const OUR_HELPERS = /_{1,2}jupyter[A-Za-z0-9_-]*/g;
-
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
 function namesAt(code, pattern) {
   return [...code.matchAll(pattern)].map((match) => match[1]);
 }
-
 function expectValidPythonIdentifiers(code) {
   const defs = namesAt(code, DEF);
   const dels = namesAt(code, DEL);
@@ -33,7 +31,6 @@ function expectValidPythonIdentifiers(code) {
   // pass every assertion below by having nothing to check.
   expect(defs.length).toBeGreaterThan(0);
   expect(helpers.length).toBeGreaterThan(0);
-
   for (const name of [...defs, ...dels, ...helpers]) {
     expect(name).toMatch(IDENTIFIER);
     expect(name).not.toContain("-");
@@ -47,30 +44,35 @@ function recordingKernel(captured) {
   return {
     language: "python",
     displayName: "Python 3",
-    executeWatch(code, onResults) {
-      captured.push({ code, onResults });
+    request(specification) {
+      const handle = recordRequest(this, specification);
+      captured.push({
+        code: specification.code,
+        onResults: handle.receive,
+      });
+      return handle;
     },
-    execute(code, onResults) {
-      captured.push({ code, onResults });
-    },
+    generation: 0,
+    onDidChangeGeneration: () => ({
+      dispose() {},
+    }),
   };
 }
-
 describe("generated Python helper code", () => {
   afterEach(() => {
     explorerStore.reset();
   });
-
-  it("names the serializer with a valid identifier", () => {
+  it("names the serializer with a valid identifier", async () => {
     expectValidPythonIdentifiers(buildSerializerCode("df"));
+    await settle();
   });
-
-  it("sends the serializer valid identifiers for a real expression", () => {
+  it("sends the serializer valid identifiers for a real expression", async () => {
     const captured = [];
     explorerStore.load(recordingKernel(captured), "df");
-
+    await settle();
     expect(captured.length).toBe(1);
     expectValidPythonIdentifiers(captured[0].code);
+    await settle();
     expect(captured[0].code).toContain("def _jupyter_explorer():");
   });
 });

@@ -85,9 +85,12 @@ Paste this into your `styles.css` to fit more rows on screen:
 
 - [`jupyter.explorer`](docs/jupyter.explorer.md): provided to let another package hand over a kernel and an expression to show.
 - `search.adapter`: provided to let the search panel query the grid on screen.
+- `jupyter.context`: consumed to resolve the command's editor and expression.
 - `jupyter.kernel`: consumed to read the active kernel and ask it to serialize a value.
 - `autocomplete.watch-editor`: consumed to offer completions in the expression field.
 - `background-tips.provider`: provided to show a tip about exploring values in an empty workspace.
+
+- `background-tips.provider`: provided to teach the package's headline action in an empty workspace.
 
 ## Contributing
 

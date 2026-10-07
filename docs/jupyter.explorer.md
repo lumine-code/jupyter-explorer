@@ -27,7 +27,7 @@ This exists so a package that already knows about a value — a variables panel 
 
 ```ts
 type ExplorerService = {
-  explore(kernel: JupyterKernel, expression: string): Promise<object>;
+  explore(kernel: JupyterKernel, expression: string): Promise<object | undefined>;
   openFile?(kernel: JupyterKernel, filePath: string): Promise<object | undefined>;
 };
 ```
@@ -72,6 +72,8 @@ module.exports = {
 `explore` replaces whatever the panel was showing — there is one panel, not one per expression.
 
 The panel evaluates the expression through the kernel, so it runs the user's code. Only pass an expression the user asked for.
+
+A kernel generation change cancels pending queries and releases the pinned data. Query cancellation stops observing the response without interrupting the shared kernel.
 
 Only Python kernels are supported today; another language resolves with the panel showing an explanation rather than throwing.
 
