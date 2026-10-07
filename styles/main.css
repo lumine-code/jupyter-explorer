@@ -340,7 +340,8 @@
       /* Row highlighted from a plot-point click (override the sticky cell bg). */
       tr.explorer-row-selected td,
       tr.explorer-row-selected .explorer-index-cell {
-        background-color: var(--explorer-grid-selection);
+        color: var(--text-color-selected);
+        background-color: var(--background-color-selected);
       }
     }
   }
