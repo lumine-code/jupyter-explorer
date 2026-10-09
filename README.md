@@ -55,7 +55,7 @@ Commands available in `.explorer-canvas-wrap`:
 
 ## Usage
 
-The expression field is a real editor, so it gets the kernel's grammar and, with `autocomplete-plus` installed, its completions. Anything the kernel can evaluate works, not just a bare name — `df.groupby("k").mean()` opens its result.
+The expression field is a real editor, so it gets the kernel's grammar and, when `autocomplete` is enabled, its completions. Anything the kernel can evaluate works, not just a bare name — `df.groupby("k").mean()` opens its result.
 
 The panel is bound to the kernel the value came from, so the status bar keeps showing that kernel while you are reading it, rather than the last file you were editing.
 
@@ -66,8 +66,6 @@ The grid loads 200-row pages and keeps at most three pages. Charts use at most 1
 An expression is evaluated once per load or refresh. Its value remains in a private explorer session in the kernel while pages are requested, so scrolling never repeats function calls or file reads. Refresh Data evaluates it again and clears filters. Closing the explorer, changing the expression or losing the kernel releases the session. Arbitrary object introspection retains its bounded preview. Unsaved explorer sessions are not restored after a window reload.
 
 Open Data File requires pyarrow in the selected kernel, for example `python -m pip install pyarrow` in that environment. It accepts `.parquet`, `.feather`, `.arrow` and `.ipc`, including Arrow IPC streams. Paths must exist on the machine running the kernel. Files are loaded into kernel memory; only pages and the chart sample reach the editor. Arrow tables and record batches already held by the kernel can also be explored directly. No Python package is installed automatically.
-
-The grid shows up to 1,000 rows and 100 columns. Sorting, search and charts use that displayed snapshot. Open the Summary view to request statistics over the full value.
 
 ## Customization
 
@@ -89,8 +87,6 @@ Paste this into your `styles.css` to fit more rows on screen:
 - `jupyter.kernel`: consumed to read the active kernel and ask it to serialize a value.
 - `autocomplete.watch-editor`: consumed to offer completions in the expression field.
 - `background-tips.provider`: provided to show a tip about exploring values in an empty workspace.
-
-- `background-tips.provider`: provided to teach the package's headline action in an empty workspace.
 
 ## Contributing
 
