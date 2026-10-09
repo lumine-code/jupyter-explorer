@@ -1254,6 +1254,14 @@ class ExpressionEditor {
 }
 
 class Explorer {
+  get plot() {
+    return this.refs.plot;
+  }
+
+  set plot(component) {
+    this.refs.plot = component;
+  }
+
   constructor(props) {
     this.props = props;
     this.destroyed = false;
@@ -1484,9 +1492,7 @@ class Explorer {
             ? renderChartPlot({
                 store,
                 view,
-                plotRef: (component) => {
-                  this.plot = component;
-                },
+                plotRef: "plot",
                 onPointClick: this.handlePointClick,
               })
             : null}
