@@ -7,23 +7,27 @@ const ExplorerSearchAdapter = require("../lib/explorer-search");
 const etch = require("@lumine-code/etch");
 const Explorer = require("../lib/explorer");
 function findPython() {
+  // Live interpreter tests are explicitly enabled in disposable integration CI.
+  if (process.env.LUMINE_TEST_LIVE_PYTHON !== "true") return null;
   for (const command of [process.env.LUMINE_EXPLORER_TEST_PYTHON, "python", "python3"].filter(
     Boolean,
   )) {
     try {
       execFileSync(command, ["-c", "import sys; assert sys.version_info.major == 3"], {
+        windowsHide: true,
         timeout: 10000,
       });
       return command;
     } catch {}
   }
-  return null;
+  throw new Error("Live Python integration was enabled, but Python 3 is unavailable.");
 }
 const python = findPython();
 const pythonSuite = python ? describe : () => {};
 function requireModule(module) {
   try {
     execFileSync(python, ["-c", `import ${module}`], {
+      windowsHide: true,
       timeout: 10000,
     });
     return true;
@@ -38,6 +42,7 @@ function evaluate(setup, body) {
 }
 function runPython(code) {
   return execFileSync(python, ["-"], {
+    windowsHide: true,
     input: code,
     encoding: "utf8",
     timeout: 30000,

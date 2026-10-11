@@ -53,6 +53,7 @@ jobs:
     timeout-minutes: 60
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_TEST_LIVE_PYTHON: "true"
       LUMINE_EXPLORER_TEST_PYTHON: ${{ github.workspace }}/.test-python/bin/python
     steps:
       - uses: actions/checkout@v7
