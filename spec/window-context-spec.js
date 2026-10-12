@@ -32,7 +32,7 @@ describe("Explorer presentations across native windows", () => {
     plot.refs.container.style.cssText = "width:500px;height:350px";
     await plot.tryDraw();
     expect(plot.error).toBeNull();
-    await conditionPromise(() => plot._drawn);
+    await globalThis.conditionPromise(() => plot._drawn);
     const gd = plot.refs.container;
     await plot.Plotly.relayout(gd, { "xaxis.range": [1.1, 1.6] });
     const extra = await workspace.detachItem(item);
