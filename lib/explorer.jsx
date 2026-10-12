@@ -163,16 +163,16 @@ const BASE_LAYOUT = {
 };
 
 function resolvedThemeColor(element, variable, fallback) {
-  const probe = document.createElement("span");
+  const probe = element.ownerDocument.createElement("span");
   probe.style.cssText = `position:absolute;visibility:hidden;color:var(${variable}, ${fallback})`;
   element.appendChild(probe);
-  const color = getComputedStyle(probe).color || fallback;
+  const color = element.ownerDocument.defaultView.getComputedStyle(probe).color || fallback;
   probe.remove();
   return color;
 }
 
 function plotTheme(element) {
-  const style = getComputedStyle(element);
+  const style = element.ownerDocument.defaultView.getComputedStyle(element);
   return {
     text: resolvedThemeColor(element, "--text-color", style.color || "rgb(157, 165, 180)"),
     grid: resolvedThemeColor(element, "--base-border-color", "rgb(96, 96, 96)"),
@@ -390,6 +390,8 @@ class ResponsivePlot {
     this.drawToken = 0;
     this.drawChain = Promise.resolve();
     etch.initialize(this);
+    this.document = this.element.ownerDocument;
+    this.domWindow = this.document.defaultView;
     this.didMount();
   }
 
@@ -549,8 +551,8 @@ class ResponsivePlot {
     // release). Capture phase + stopPropagation keeps it from starting a drag.
     e.preventDefault();
     e.stopPropagation();
-    window.addEventListener("mousemove", this.handleMouseMove);
-    window.addEventListener("mouseup", this.handleMouseUp);
+    this.domWindow.addEventListener("mousemove", this.handleMouseMove);
+    this.domWindow.addEventListener("mouseup", this.handleMouseUp);
   };
 
   handleMouseMove = (e) => {
@@ -571,8 +573,8 @@ class ResponsivePlot {
 
   handleMouseUp = () => {
     this._pan = null;
-    window.removeEventListener("mousemove", this.handleMouseMove);
-    window.removeEventListener("mouseup", this.handleMouseUp);
+    this.domWindow.removeEventListener("mousemove", this.handleMouseMove);
+    this.domWindow.removeEventListener("mouseup", this.handleMouseUp);
   };
 
   // Escape clears any active box/lasso selection (un-dims all points).
@@ -605,21 +607,38 @@ class ResponsivePlot {
     );
     this.refs.container.addEventListener("contextmenu", this.preventContextMenu, true);
     this.refs.container.addEventListener("mousedown", this.handleMouseDown, true);
+    this.bindPresentationDocument(this.element.ownerDocument);
+    this.subscriptions.add(
+      lumine.views.addWindowParticipant(this.element, {
+        prepareWindowChange: async () => {
+          this.handleMouseUp();
+          await this.drawChain;
+        },
+        didAttachToWindow: ({ document }) => this.bindPresentationDocument(document),
+      }),
+    );
+    this.tryDraw();
+  }
+
+  bindPresentationDocument(document) {
+    if (this.presentationDocument === document) return;
+    if (this.presentationDocument) {
+      this.handleMouseUp();
+      this.document.removeEventListener("keydown", this.handleKeyDown);
+      this.resizeObserver?.disconnect();
+    }
+    this.presentationDocument = document;
+    this.document = document;
+    this.domWindow = document.defaultView;
     document.addEventListener("keydown", this.handleKeyDown);
-    this.resizeObserver = new ResizeObserver(() => {
+    this.resizeObserver = new this.domWindow.ResizeObserver(() => {
       const gd = this.refs.container;
-      if (!gd) {
-        return;
-      }
-      // Draw lazily once the container has a real size, then just resize.
-      if (!this._drawn) {
-        this.tryDraw();
-      } else if (gd.clientWidth > 0 && gd.clientHeight > 0) {
+      if (!gd) return;
+      if (!this._drawn) this.tryDraw();
+      else if (gd.clientWidth > 0 && gd.clientHeight > 0)
         this.plotAction(() => this.Plotly.Plots.resize(gd));
-      }
     });
     this.resizeObserver.observe(this.refs.container);
-    this.tryDraw();
   }
 
   update(props) {
@@ -644,9 +663,9 @@ class ResponsivePlot {
   teardown() {
     this.subscriptions?.dispose();
     this.subscriptions = null;
-    document.removeEventListener("keydown", this.handleKeyDown);
-    window.removeEventListener("mousemove", this.handleMouseMove);
-    window.removeEventListener("mouseup", this.handleMouseUp);
+    this.document.removeEventListener("keydown", this.handleKeyDown);
+    this.domWindow.removeEventListener("mousemove", this.handleMouseMove);
+    this.domWindow.removeEventListener("mouseup", this.handleMouseUp);
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
@@ -1332,8 +1351,9 @@ class Explorer {
     const store = this.props.store;
     if (store.focusToken !== this._lastFocusToken && !store.loading && store.payload) {
       this._lastFocusToken = store.focusToken;
-      if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
-      this.focusFrame = requestAnimationFrame(() => {
+      if (this.focusFrame !== null) this.focusFrameWindow.cancelAnimationFrame(this.focusFrame);
+      this.focusFrameWindow = this.element.ownerDocument.defaultView;
+      this.focusFrame = this.focusFrameWindow.requestAnimationFrame(() => {
         this.focusFrame = null;
         if (!this.destroyed) this.focusBody();
       });
@@ -1343,7 +1363,7 @@ class Explorer {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
-    if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
+    if (this.focusFrame !== null) this.focusFrameWindow.cancelAnimationFrame(this.focusFrame);
     this.storeSubscription?.dispose();
     this._bodyCommands?.dispose();
     this._toolbarCommands?.dispose();
@@ -1386,7 +1406,7 @@ class Explorer {
       return;
     }
 
-    const active = document.activeElement;
+    const active = this.element.ownerDocument.activeElement;
     const currentIndex = items.indexOf(active);
     const nextIndex =
       currentIndex === -1
@@ -1399,13 +1419,13 @@ class Explorer {
 
   confirmToolbarItem(event) {
     event?.stopPropagation?.();
-    const active = document.activeElement;
+    const active = this.element.ownerDocument.activeElement;
     if (!this.refs.toolbar?.contains(active)) {
       this.focusToolbar();
       return;
     }
 
-    if (active instanceof HTMLButtonElement || active instanceof HTMLInputElement) {
+    if (active?.matches?.("button, input")) {
       active.click();
     }
   }

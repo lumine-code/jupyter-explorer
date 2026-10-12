@@ -65,6 +65,17 @@ class ExplorerCanvasGrid extends CanvasGrid {
   constructor(props) {
     super(gridOptions(props));
     this.props = props;
+    this.disposables.push(
+      lumine.views.addWindowParticipant(this.element, {
+        prepareWindowChange: () => this.getScrollState(),
+        didAttachToWindow: ({ document }) => this.bindDocument(document),
+        didChangeWindow: ({ targetWindow, state }) => {
+          this.bindDocument(targetWindow.getDocument());
+          this.setScrollState(state);
+        },
+        cancelWindowChange: ({ state }) => this.setScrollState(state),
+      }),
+    );
     this.consumedRestoreState = null;
     this.updateOptions(callbacks(props, this));
     this.applyExternalState(null);

@@ -9,6 +9,7 @@ A `repr` tells you a value is a dataframe with 40,000 rows. This shows you the r
 - **Any Python value**: dataframes, series, arrays, dicts, lists and nested combinations of them.
 - **A real grid**: pages through every row of dataframes, arrays, series and collections without pulling the whole value into the editor; sorting and linked column filters run on the complete dataset in the kernel.
 - **Drill down**: open a cell that holds another structure and keep going; the breadcrumb walks back.
+- **Editor windows**: retains grid data and chart state when the pane moves between windows.
 - **Charts**: line, scatter and heatmap views over the numeric columns, picked from the toolbar.
 - **Search**: the search panel queries the grid on screen.
 - **Keyboard driven**: move the selection, extend it by row or column, and page through without the mouse.
