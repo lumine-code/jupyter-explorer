@@ -27,7 +27,7 @@ describe("jupyter-explorer singleton pane operations", () => {
     const activePane = lumine.workspace.getActivePane();
     await expectAsync(
       lumine.workspace.copyPaneItem(item, { splitDirection: "down" }),
-    ).toBeRejectedWith(jasmine.objectContaining({ code: "SINGLETON" }));
+    ).toBeResolvedTo(null);
     expect(lumine.workspace.getCenter().getPanes()).toEqual(panes);
     expect(lumine.workspace.getActivePane()).toBe(activePane);
     expect(lumine.workspace.paneForItem(item)).toBe(moved.pane);
