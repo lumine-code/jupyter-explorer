@@ -5,6 +5,7 @@ const { CompositeDisposable } = require("lumine");
 const { INDEX_COLUMN } = require("./explorer-store");
 const { renderExplorerGrid } = require("./explorer-grid");
 const { autocompleteConsumer: AutocompleteConsumer } = require("./autocomplete");
+const plotlyLoader = require("./plotly-loader");
 
 // View modes, inspired by the nteract explorer's view toolbar. "grid" and
 // "summary" are tabular; the rest are Plotly charts.
@@ -457,7 +458,7 @@ class ResponsivePlot {
   // happens when the pane/plot is laid out but not yet visible.
   tryDraw() {
     const gd = this.refs.container;
-    if (this.destroyed || !gd || !this.Plotly || gd.clientWidth === 0 || gd.clientHeight === 0) {
+    if (this.destroyed || !gd || gd.clientWidth === 0 || gd.clientHeight === 0) {
       return;
     }
     return this.draw(this._drawn ? "react" : "newPlot");
@@ -471,6 +472,11 @@ class ResponsivePlot {
     const job = this.drawChain.then(async () => {
       if (this.destroyed || token !== this.drawToken) return;
       try {
+        if (!this.Plotly) {
+          const runtime = await plotlyLoader.loadPlotly();
+          if (this.destroyed || token !== this.drawToken) return;
+          this.Plotly = runtime;
+        }
         const hadPlot = this._drawn;
         // A newer draw may have requested react while initialization was
         // still pending. Decide only once that earlier work has settled.
@@ -503,7 +509,7 @@ class ResponsivePlot {
           await etch.update(this);
         }
       } finally {
-        if (this.destroyed) this.Plotly.purge(gd);
+        if (this.destroyed) this.Plotly?.purge(gd);
       }
     });
     this.drawChain = job;
@@ -601,7 +607,6 @@ class ResponsivePlot {
   };
 
   didMount() {
-    this.Plotly = require("plotly.js-dist");
     this.subscriptions = new CompositeDisposable(
       lumine.themes.onDidChangeVariables(() => this.applyTheme()),
     );

@@ -169,6 +169,7 @@ describe("data explorer", () => {
     flush(component);
     jasmine.attachToDOM(component.element);
     const container = component.plot.refs.container;
+    component.plot.Plotly = await require("../lib/plotly-loader").loadPlotly();
     component.plot._drawn = true;
     component.plot.themeSignature = JSON.stringify(Explorer.plotTheme(container));
     spyOn(component.plot, "draw");
