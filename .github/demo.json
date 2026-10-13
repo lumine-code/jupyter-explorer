@@ -2,9 +2,10 @@
   "title": "jupyter-explorer",
   "description": "Use jupyter-explorer with the running Python kernel.",
   "recordedOn": "2026-10-13",
-  "sourceRevision": "e718db3b33edc4b5527f8e85e80eb50188dbfe0b",
+  "sourceRevision": "f22d0913e68ad5bae1e15f77c1c681bdad3d3e4b",
   "mode": "normal",
   "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
   "images": [
     {
       "file": "demo.png",
