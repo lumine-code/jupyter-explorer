@@ -1,0 +1,22 @@
+{
+  "title": "jupyter-explorer",
+  "description": "Use jupyter-explorer with the running Python kernel.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "e718db3b33edc4b5527f8e85e80eb50188dbfe0b",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Use jupyter-explorer with the running Python kernel.",
+      "width": 1200,
+      "height": 760
+    },
+    {
+      "file": "demo-2.png",
+      "label": "Plot the same live array as a line chart.",
+      "width": 1200,
+      "height": 760
+    }
+  ]
+}

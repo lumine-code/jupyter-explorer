@@ -16,6 +16,10 @@ A `repr` tells you a value is a dataframe with 40,000 rows. This shows you the r
 - **Column profiles**: exact missing and distinct counts, numeric statistics and histograms over every matching row; clicking a histogram bin or frequent value filters the grid and charts together.
 - **Columnar files**: open Parquet, Feather and Arrow IPC files through an existing Python kernel with optional pyarrow installed there.
 
+![Use jupyter-explorer with the running Python kernel.](.github/demo.png)
+
+![Plot the same live array as a line chart.](.github/demo-2.png)
+
 ## Installation
 
 To install `jupyter-explorer` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-explorer`.
