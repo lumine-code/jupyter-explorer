@@ -1,23 +1,83 @@
 {
   "title": "jupyter-explorer",
-  "description": "Inspect a live NumPy array in the data grid, then plot it as a line chart.",
+  "description": "Inspect the values of a live NumPy array in the data grid.",
   "recordedOn": "2026-10-14",
-  "sourceRevision": "8ff5767e9b77c992c3ee10d4b4a1dea1c82818cd",
+  "sourceRevision": "4287688e1dd5fc974e540b46a7105c9b98ded580",
+  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
   "mode": "normal",
   "fontSettings": "default",
-  "themeSourceRevision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
+  "scenario": "demo.js",
+  "recipeHash": "7c9c37bf9abcbaa47ac0d93e4094b2d138f4699db435845f7958448881e61266",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1200, "height": 760 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "8be8f86075ad93df038610d82b3ac6d99329957d",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "package": {
+      "revision": "4287688e1dd5fc974e540b46a7105c9b98ded580",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-explorer": {
+      "revision": "4287688e1dd5fc974e540b46a7105c9b98ded580",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-cells": {
+      "revision": "2f08b56b04633f28ae26a1fb0786af9e11966edc",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-repl": {
+      "revision": "22e65daeb62d6827fdd04cc529d4003cd450ea9f",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "language-python": {
+      "revision": "0ff5b68a22a196804b0ad2451f0c05ff419cf784",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "one-theme": {
+      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "jupyter/signal.py",
+      "sha256": "1cca25f8c327f4c05a594c0e3f410378f3869238f601e21f0a9ad58e39f07141"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Inspect the values of a live NumPy array in the data grid.",
       "width": 900,
-      "height": 450
+      "height": 450,
+      "sha256": "940b52558314521c43f81fb76b487dcece3db72e4260b70da34d025c634d9914"
     },
     {
       "file": "demo-2.png",
       "label": "Plot the same live array as a line chart.",
       "width": 1200,
-      "height": 760
+      "height": 760,
+      "sha256": "0db1750d9899c33994ecd823509712ac8718c91daae601869922ab443b4464c7"
     }
   ]
 }
