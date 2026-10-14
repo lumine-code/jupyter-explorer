@@ -1,17 +1,17 @@
 {
   "title": "jupyter-explorer",
-  "description": "Use jupyter-explorer with the running Python kernel.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "f22d0913e68ad5bae1e15f77c1c681bdad3d3e4b",
+  "description": "Inspect a live NumPy array in the data grid, then plot it as a line chart.",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "8ff5767e9b77c992c3ee10d4b4a1dea1c82818cd",
   "mode": "normal",
   "fontSettings": "default",
-  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "themeSourceRevision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
   "images": [
     {
       "file": "demo.png",
-      "label": "Use jupyter-explorer with the running Python kernel.",
-      "width": 1200,
-      "height": 760
+      "label": "Inspect the values of a live NumPy array in the data grid.",
+      "width": 900,
+      "height": 450
     },
     {
       "file": "demo-2.png",
