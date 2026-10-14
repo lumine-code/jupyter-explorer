@@ -4,11 +4,13 @@
       "label": "View",
       "submenu": [
         {
-          "label": "Open View",
+          "label": "Jupyter",
           "submenu": [
             {
-              "label": "Jupyter Explorer",
-              "command": "jupyter-explorer:open"
+              "label": "Open Explorer",
+              "command": "jupyter-explorer:open",
+              "group": "reveal",
+              "order": 10
             }
           ]
         }
