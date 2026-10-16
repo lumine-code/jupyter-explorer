@@ -14,6 +14,16 @@ describe("Explorer presentations across native windows", () => {
     }
     await lumine.workspace.discardEditorWindows();
   });
+  it("does not consume the explore shortcut outside an editor", async () => {
+    const command = "jupyter-explorer:explore";
+    const editor = await lumine.workspace.open();
+    expect(
+      lumine.keymaps.findKeyBindings({ target: lumine.workspace.getElement(), command }),
+    ).toEqual([]);
+    expect(lumine.keymaps.findKeyBindings({ target: editor.element, command }).length).toBe(1);
+    expect(lumine.commands.canDispatch(editor.element, command)).toBe(true);
+    editor.destroy();
+  });
   it("retains a real Plotly chart, its zoom and native pointer context through detach and attach", async () => {
     const { ResponsivePlot } = require("../lib/explorer");
     const plot = new ResponsivePlot({
