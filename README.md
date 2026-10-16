@@ -30,9 +30,12 @@ It reads its kernels from [`jupyter-repl`](https://github.com/lumine-code/jupyte
 
 Commands available in `lumine-workspace`:
 
-- `jupyter-explorer:explore`: explore the expression under the cursor,
 - `jupyter-explorer:open`: open the panel — an empty one picks up the active kernel and the expression under the cursor,
 - `jupyter-explorer:open-data-file`: choose a Parquet, Feather or Arrow IPC file to open with the current Python kernel.
+
+Commands available in `lumine-text-editor:not([mini])`:
+
+- `jupyter-explorer:explore`: explore the expression under the cursor.
 
 Commands available in `.explorer-body`, `.explorer-toolbar-row` and the expression editor:
 
