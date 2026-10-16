@@ -21,7 +21,7 @@ describe("Explorer presentations across native windows", () => {
       lumine.keymaps.findKeyBindings({ target: lumine.workspace.getElement(), command }),
     ).toEqual([]);
     expect(lumine.keymaps.findKeyBindings({ target: editor.element, command }).length).toBe(1);
-    expect(lumine.commands.canDispatch(editor.element, command)).toBe(true);
+    expect(lumine.commands.canDispatch(editor.element, command)).toBe(false);
     editor.destroy();
   });
   it("retains a real Plotly chart, its zoom and native pointer context through detach and attach", async () => {

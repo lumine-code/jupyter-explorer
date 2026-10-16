@@ -31,6 +31,7 @@ describe("jupyter-explorer command context ownership", () => {
     main.consumeJupyterKernel({
       getActiveKernel: () => active,
       getKernelForEditor: lookup,
+      peekKernelState: () => ({ language: "python", connectionState: "ready" }),
       onDidChangeKernel: () => new Disposable(),
       onDidRemoveKernel: () => new Disposable(),
     });
@@ -54,6 +55,7 @@ describe("jupyter-explorer command context ownership", () => {
     main.consumeJupyterKernel({
       getActiveKernel: () => null,
       getKernelForEditor: lookup,
+      peekKernelState: () => ({ language: "python", connectionState: "ready" }),
       onDidChangeKernel: () => new Disposable(),
       onDidRemoveKernel: () => new Disposable(),
     });

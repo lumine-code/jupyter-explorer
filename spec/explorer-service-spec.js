@@ -123,7 +123,8 @@ describe("jupyter.explorer", () => {
     spyOn(lumine.notifications, "addWarning");
     await settle();
     await lumine.commands.dispatch(editor.element, "jupyter-explorer:explore");
-    expect(lumine.notifications.addWarning).toHaveBeenCalled();
+    expect(lumine.commands.canDispatch(editor.element, "jupyter-explorer:explore")).toBe(false);
+    expect(lumine.notifications.addWarning).not.toHaveBeenCalled();
     expect(kernel.executed).toEqual([]);
     editor.destroy();
     main.deactivate();
