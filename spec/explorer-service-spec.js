@@ -27,6 +27,7 @@ function fakeProvider(kernel) {
   return {
     removed: [],
     getActiveKernel: () => kernel,
+    getKernelForEditor: () => kernel,
     onDidRemoveKernel(callback) {
       this.removed.push(callback);
       return {
@@ -115,16 +116,16 @@ describe("jupyter.explorer", () => {
     main.activate();
     await settle();
     const kernel = fakeKernel("julia");
+    const editor = lumine.workspace.buildTextEditor();
+    jasmine.attachToDOM(editor.element);
     main.consumeJupyterKernel(fakeProvider(kernel));
     await settle();
     spyOn(lumine.notifications, "addWarning");
     await settle();
-    await lumine.commands.dispatch(
-      lumine.views.getView(lumine.workspace),
-      "jupyter-explorer:explore",
-    );
+    await lumine.commands.dispatch(editor.element, "jupyter-explorer:explore");
     expect(lumine.notifications.addWarning).toHaveBeenCalled();
     expect(kernel.executed).toEqual([]);
+    editor.destroy();
     main.deactivate();
     await settle();
   });
