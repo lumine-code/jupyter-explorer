@@ -1225,7 +1225,7 @@ class ExpressionEditor {
     }
     this.element.appendChild(this.editor.element);
     AutocompleteConsumer.watchPanelEditor(this.editor);
-    this._changeDisposable = this.editor.onDidChange(() => {
+    this._changeDisposable = this.editor.getBuffer().onDidChangeText(() => {
       // Programmatic setText in update() must not echo back into the store:
       // the emit would re-enter the parent's patch that is applying the very
       // change being echoed.
