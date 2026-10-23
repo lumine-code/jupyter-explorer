@@ -88,20 +88,19 @@ async function startLiveKernel(python) {
       fs.rmSync(root, { recursive: true, force: true });
     }
   }
+  let startupTimer;
   try {
-    const ready = await Promise.race([
-      new Promise((resolve, reject) => pending.set(0, { resolve, reject })),
-      new Promise((_, reject) => {
-        const timer = setTimeout(() => reject(new Error("Live kernel startup timed out")), 30000);
-        exited.finally(() => clearTimeout(timer));
-        child.stdout.once("data", () => clearTimeout(timer));
-      }),
-    ]);
+    const ready = await new Promise((resolve, reject) => {
+      pending.set(0, { resolve, reject });
+      startupTimer = setTimeout(() => reject(new Error("Live kernel startup timed out")), 30000);
+    });
     if (ready.status !== "ready") throw new Error(JSON.stringify(ready));
     return { kernel, close, pythonVersion: ready.pythonVersion };
   } catch (error) {
     await close();
     throw error;
+  } finally {
+    clearTimeout(startupTimer);
   }
 }
 

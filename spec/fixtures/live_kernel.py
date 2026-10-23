@@ -14,7 +14,10 @@ from jupyter_client import KernelManager
 def reply(client, message_id, timeout):
     deadline = time.monotonic() + timeout
     while True:
-        message = client.get_shell_msg(timeout=max(0.1, deadline - time.monotonic()))
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("The kernel did not send its shell reply")
+        message = client.get_shell_msg(timeout=remaining)
         if message.get("parent_header", {}).get("msg_id") == message_id:
             return message["content"]
 
@@ -23,7 +26,10 @@ def outputs(client, message_id, timeout):
     deadline = time.monotonic() + timeout
     collected = []
     while True:
-        message = client.get_iopub_msg(timeout=max(0.1, deadline - time.monotonic()))
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("The kernel did not become idle")
+        message = client.get_iopub_msg(timeout=remaining)
         if message.get("parent_header", {}).get("msg_id") != message_id:
             continue
         kind = message["header"]["msg_type"]
