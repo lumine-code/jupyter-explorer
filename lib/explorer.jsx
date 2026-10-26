@@ -1,5 +1,6 @@
 /** @jsx etch.dom */
 /** @jsxFrag etch.Fragment */
+const InputBudget = require("./input-budget");
 const etch = require("@lumine-code/etch");
 const { CompositeDisposable } = require("lumine");
 const { INDEX_COLUMN } = require("./explorer-store");
@@ -1224,16 +1225,24 @@ class ExpressionEditor {
       this.editor.setText(this.props.value);
     }
     this.element.appendChild(this.editor.element);
+    this.budget = new InputBudget(this.editor, this.element, {
+      limit: 64 * 1024,
+      label: "Expression",
+    });
     AutocompleteConsumer.watchPanelEditor(this.editor);
     this._changeDisposable = this.editor.getBuffer().onDidChangeText(() => {
       // Programmatic setText in update() must not echo back into the store:
       // the emit would re-enter the parent's patch that is applying the very
       // change being echoed.
       if (this._settingText) return;
-      this.props.onChange(this.editor.getText());
+      this.budget.validate();
+      this.props.onChange(this.editor.getBuffer().getTextSnapshot());
     });
     this._commands = lumine.commands.add(this.editor.element, {
-      "core:confirm": () => this.props.onConfirm(this.editor.getText()),
+      "core:confirm": () => {
+        const text = this.budget.read();
+        if (text !== undefined) this.props.onConfirm(text);
+      },
       "core:cancel": (event) =>
         clearExpressionOrAbortMultiCursor(this.editor, this.props.onChange, event),
       "jupyter-explorer:focus-toolbar": {
@@ -1249,13 +1258,11 @@ class ExpressionEditor {
 
   update(props) {
     this.props = props;
-    if (this.editor && this.editor.getText() !== props.value) {
-      this._settingText = true;
-      try {
-        this.editor.setText(props.value || "");
-      } finally {
-        this._settingText = false;
-      }
+    this._settingText = true;
+    try {
+      this.budget.sync(props.value);
+    } finally {
+      this._settingText = false;
     }
     return etch.update(this);
   }
@@ -1264,6 +1271,7 @@ class ExpressionEditor {
     this._changeDisposable?.dispose();
     this._commands?.dispose();
     this._textEditorDisposable?.dispose();
+    this.budget?.dispose();
     this.editor?.destroy();
     return etch.destroy(this);
   }
@@ -1551,7 +1559,7 @@ class Explorer {
           <div className="explorer-expression">
             <ExpressionEditor
               ref="expression"
-              value={store.expression}
+              value={store.expressionSource}
               onChange={store.setExpression}
               onConfirm={store.loadExpression}
               grammar={store.kernel && store.kernel.grammar}

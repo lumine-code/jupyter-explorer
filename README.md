@@ -99,3 +99,5 @@ Paste this into your `styles.css` to fit more rows on screen:
 ## Contributing
 
 Got ideas to make this package better, found a bug, or want to help add new features? Just drop your thoughts on GitHub. Any feedback is welcome!
+
+Expression inputs retain their complete draft as an immutable text snapshot. Evaluation accepts at most 65,536 UTF-16 units; larger drafts display an error, cancel pending evaluation and block refresh until shortened.
