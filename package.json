@@ -48,7 +48,7 @@
     },
     "search.adapter": {
       "versions": {
-        "1.0.0": "provideSearchAdapter"
+        "2.0.0": "provideSearchAdapter"
       }
     },
     "background-tips.provider": {
