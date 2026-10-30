@@ -65,6 +65,8 @@ class ExplorerCanvasGrid extends CanvasGrid {
   constructor(props) {
     super(gridOptions(props));
     this.props = props;
+    const scrollbar = lumine.scrollbars?.attach(this.scrollElement, { policy: "auto" });
+    if (scrollbar) this.disposables.push(scrollbar);
     this.disposables.push(
       lumine.views.addWindowParticipant(this.element, {
         prepareWindowChange: () => this.getScrollState(),
@@ -141,7 +143,11 @@ function renderExplorerGrid(store) {
   if (!payload) return null;
   if (!Array.isArray(payload.rows) || !Array.isArray(payload.columns)) {
     return (
-      <div className="explorer-scalar native-key-bindings" tabIndex={0}>
+      <div
+        className="explorer-scalar native-key-bindings"
+        tabIndex={0}
+        attributes={{ "data-scrollbar": "auto" }}
+      >
         <pre>{payload.repr || "No tabular representation"}</pre>
       </div>
     );

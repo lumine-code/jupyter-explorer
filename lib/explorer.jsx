@@ -920,7 +920,11 @@ function renderSummaryView({ store }) {
     return renderMessage("No summary statistics available for this data");
   }
   return (
-    <div className="explorer-table-wrapper native-key-bindings" tabIndex={0}>
+    <div
+      className="explorer-table-wrapper native-key-bindings"
+      tabIndex={0}
+      attributes={{ "data-scrollbar": "auto" }}
+    >
       <table className="explorer-table">
         <thead>
           <tr>
@@ -953,7 +957,11 @@ function renderColumnProfile(store) {
   if (!profile)
     return renderMessage("Choose a column and click Profile to compute full-data statistics.");
   return (
-    <div className="explorer-column-profile native-key-bindings" tabIndex={0}>
+    <div
+      className="explorer-column-profile native-key-bindings"
+      tabIndex={0}
+      attributes={{ "data-scrollbar": "auto" }}
+    >
       <div className="explorer-profile-label">
         {profile.label}: exact profile of all {profile.total} matching rows (
         {store.payload.total_rows} total).
