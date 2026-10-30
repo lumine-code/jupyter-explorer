@@ -24,6 +24,7 @@
   .explorer-controls {
     flex: 0 0 auto;
     padding: 8px 8px 6px;
+    border-bottom: 1px solid var(--base-border-color);
 
     .explorer-expression {
       display: flex;
@@ -397,7 +398,6 @@
   .explorer-data-tools {
     flex: 0 0 auto;
     padding: 0.5em;
-    border-bottom: 1px solid var(--base-border-color);
   }
 
   .explorer-filter-form,
