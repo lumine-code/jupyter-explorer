@@ -71,6 +71,8 @@ class ExplorerCanvasGrid extends CanvasGrid {
       this.setScrollEndInset(geometry.scrollEndInset || 0);
     });
     if (observation) this.disposables.push(observation);
+    const navigation = this.onDidNavigate?.(() => lumine.scrollbars?.reveal(this.scrollElement));
+    if (navigation) this.disposables.push(navigation);
     this.disposables.push(
       lumine.views.addWindowParticipant(this.element, {
         prepareWindowChange: () => this.getScrollState(),
@@ -130,6 +132,7 @@ class ExplorerCanvasGrid extends CanvasGrid {
       (!previous || previous.selectedRow !== this.props.selectedRow)
     ) {
       this.scrollRowIntoView(this.props.selectedRow);
+      if (previous) lumine.scrollbars?.reveal(this.scrollElement);
     }
   }
 

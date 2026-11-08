@@ -33,6 +33,19 @@ describe("Explorer CanvasGrid adapter", () => {
     grid = null;
   });
 
+  it("reveals its actual scrollport for a visible navigation target and retires the subscription", () => {
+    const reveal = spyOn(lumine.scrollbars, "reveal");
+    grid = new ExplorerCanvasGrid(props());
+    grid.moveActiveSelectionTo(0, 0);
+    expect(reveal).toHaveBeenCalledOnceWith(grid.scrollElement);
+    const element = grid.scrollElement;
+    grid.destroy();
+    reveal.calls.reset();
+    grid.navigate(1, 0);
+    expect(reveal).not.toHaveBeenCalled();
+    expect(element.isConnected).toBeFalse();
+  });
+
   it("maps an explorer payload without copying its row array", () => {
     const input = props();
     const options = gridOptions(input);
