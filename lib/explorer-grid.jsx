@@ -65,15 +65,13 @@ class ExplorerCanvasGrid extends CanvasGrid {
   constructor(props) {
     super(gridOptions(props));
     this.props = props;
-    const scrollbar = lumine.scrollbars?.attach(this.scrollElement, { policy: "auto" });
+    const scrollbar = lumine.scrollbars.attach(this.scrollElement, { policy: "auto" });
     if (scrollbar) this.disposables.push(scrollbar);
-    const observation = lumine.scrollbars?.observe(this.scrollElement, (geometry) => {
-      this.setScrollEndInset(geometry.scrollEndInset || 0);
-    });
-    if (observation) this.disposables.push(observation);
-    const navigation = this.onDidNavigate?.(() => lumine.scrollbars?.reveal(this.scrollElement));
-    if (navigation) this.disposables.push(navigation);
     this.disposables.push(
+      lumine.scrollbars.observe(this.scrollElement, (geometry) => {
+        this.setScrollEndInset(geometry.scrollEndInset || 0);
+      }),
+      this.onDidNavigate(() => lumine.scrollbars.reveal(this.scrollElement)),
       lumine.views.addWindowParticipant(this.element, {
         prepareWindowChange: () => this.getScrollState(),
         didAttachToWindow: ({ document }) => this.bindDocument(document),
@@ -132,7 +130,7 @@ class ExplorerCanvasGrid extends CanvasGrid {
       (!previous || previous.selectedRow !== this.props.selectedRow)
     ) {
       this.scrollRowIntoView(this.props.selectedRow);
-      if (previous) lumine.scrollbars?.reveal(this.scrollElement);
+      if (previous) lumine.scrollbars.reveal(this.scrollElement);
     }
   }
 
