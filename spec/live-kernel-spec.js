@@ -65,7 +65,7 @@ def notebook_data():
     return pd.DataFrame({'n': np.arange(12000), 'tag': ['even', 'odd'] * 6000})
 print(json.dumps({'python': '.'.join(map(str, sys.version_info[:3])), 'ipykernel': ipykernel.__version__}))`,
     );
-    expect(environment.python).toBe("3.15.1");
+    expect(environment.python).toBe("3.15.2");
     expect(environment.ipykernel).toBe("7.4.0");
 
     await load("notebook_data()");
