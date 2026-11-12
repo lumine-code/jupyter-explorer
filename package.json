@@ -77,21 +77,21 @@
   "dependencies": {
     "@lumine-code/canvas-grid": "github:lumine-code/canvas-grid#f26f9c98694276d39a3f5e504269d37cd7ba778f",
     "@lumine-code/etch": "github:lumine-code/etch#52c94d488a7996ef811cb5848a68a33719e997e6",
-    "plotly.js-dist": "^4.2.0"
+    "plotly.js-dist": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.14.0",
-    "prettier": "^3.9.10"
+    "prettier": "^3.10.0"
   },
   "overrides": {
     "eslint@^10.14.0": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.8"
     },
     "@eslint/config-array@0.23.5": {
-      "minimatch": "11.0.5"
+      "minimatch": "11.0.8"
     }
   }
 }
