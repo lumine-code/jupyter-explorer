@@ -30,7 +30,10 @@ function callbacks(props, grid = null) {
       const metadata = props.payload.paged
         ? record?._explorer?.navigation
         : props.navMeta?.[windowRow];
-      if (metadata?.expandable) props.onDrill?.(windowRow, grid?.captureState() || null);
+      if (metadata?.expandable && typeof props.onDrill === "function") {
+        if (grid) lumine.scrollbars.reveal(grid.scrollElement);
+        props.onDrill(windowRow, grid?.captureState() || null);
+      }
     },
     onSort: props.onSort,
     onError: (error) =>

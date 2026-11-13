@@ -46,6 +46,54 @@ describe("Explorer CanvasGrid adapter", () => {
     expect(element.isConnected).toBeFalse();
   });
 
+  for (const paged of [false, true]) {
+    it(`signals expandable Enter drill-down once through the current ${paged ? "paged" : "in-memory"} callback`, async () => {
+      const firstDrill = jasmine.createSpy("first drill");
+      const nextDrill = jasmine.createSpy("updated drill");
+      const record = { 0: "a", 1: 1, _explorer: { navigation: { expandable: true } } };
+      grid = new ExplorerCanvasGrid(
+        props({
+          payload: payload({ paged, row_count: 1 }),
+          fetchRows: async () => [record],
+          onDrill: firstDrill,
+        }),
+      );
+      jasmine.attachToDOM(grid.element);
+      grid.moveActiveSelectionTo(0, 0);
+      await grid.update({ ...grid.props, onDrill: nextDrill });
+      const reveal = spyOn(lumine.scrollbars, "reveal");
+      const confirm = spyOn(grid, "confirmActiveCell").and.callThrough();
+      const before = grid.getScrollState();
+      const captured = grid.captureState();
+      lumine.commands.dispatch(grid.element, "core:confirm");
+      await confirm.calls.mostRecent().returnValue;
+      expect(firstDrill).not.toHaveBeenCalled();
+      expect(nextDrill).toHaveBeenCalledOnceWith(0, captured);
+      expect(reveal).toHaveBeenCalledOnceWith(grid.scrollElement);
+      expect(grid.getScrollState()).toEqual(before);
+    });
+  }
+
+  for (const reason of ["non-expandable", "no drill callback"]) {
+    it(`keeps ${reason} confirmation outside navigation activity`, async () => {
+      const onDrill = jasmine.createSpy("drill");
+      grid = new ExplorerCanvasGrid(
+        props({
+          navMeta: [{ expandable: reason !== "non-expandable" }],
+          onDrill: reason === "no drill callback" ? undefined : onDrill,
+        }),
+      );
+      jasmine.attachToDOM(grid.element);
+      grid.moveActiveSelectionTo(0, 0);
+      const reveal = spyOn(lumine.scrollbars, "reveal");
+      const confirm = spyOn(grid, "confirmActiveCell").and.callThrough();
+      lumine.commands.dispatch(grid.element, "core:confirm");
+      await confirm.calls.mostRecent().returnValue;
+      expect(onDrill).not.toHaveBeenCalled();
+      expect(reveal).not.toHaveBeenCalled();
+    });
+  }
+
   it("maps an explorer payload without copying its row array", () => {
     const input = props();
     const options = gridOptions(input);
