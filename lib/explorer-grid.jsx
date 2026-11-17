@@ -39,7 +39,7 @@ function callbacks(props, grid = null) {
     onError: (error) =>
       error.name !== "AbortError" &&
       lumine.notifications.addError("Data Explorer grid failed", {
-        description: error.message,
+        detail: error.message,
         dismissable: true,
       }),
   };
