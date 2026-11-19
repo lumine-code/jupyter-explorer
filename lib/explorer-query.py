@@ -140,6 +140,21 @@ class _JupyterExplorerData:
                     "expandable": valid and self.expandable(self.obj[key])}
         return {"accessor": "[%d]" % row, "expandable": self.expandable(self.obj[row])}
 
+    def rows(self, positions):
+        if not self.columns:
+            return (() for _ in positions)
+        if self.kind == "dataframe":
+            return self.obj.iloc[positions].itertuples(index=False, name=None)
+        if self.kind == "series":
+            return ((value,) for value in self.obj.iloc[positions])
+        if self.kind == "ndarray" and self.obj.ndim == 2:
+            return self.obj[positions].tolist()
+        if self.kind == "arrow":
+            import pyarrow as pa
+            page = self.obj.take(pa.array(positions, type=pa.int64()))
+            return zip(*(column.to_pylist() for column in page.columns))
+        return ([self.value(row, col) for col in range(len(self.columns))] for row in positions)
+
     def page(self, offset=0, limit=200, sample=False):
         indexes = self.indices()
         size = len(indexes)
@@ -149,14 +164,7 @@ class _JupyterExplorerData:
         else:
             slots = range(offset, min(size, offset + limit))
         selected = [int(indexes[i]) for i in slots]
-        # iloc/NumPy/Arrow slice only the page, then convert to JSON scalars.
-        if self.kind == "dataframe":
-            values = self.obj.iloc[selected].itertuples(index=False, name=None)
-        elif self.kind == "ndarray" and self.obj.ndim == 2:
-            values = self.obj[selected].tolist()
-        else:
-            values = ([self.value(row, col) for col in range(len(self.columns))] for row in selected)
-        return {"rows": [[self.clean(v) for v in row] for row in values],
+        return {"rows": [[self.clean(v) for v in row] for row in self.rows(selected)],
                 "index": [self.label(row) for row in selected], "offset": offset,
                 "navmeta": [self.navigation(row) for row in selected], "row_slots": list(slots),
                 "sampled": sample and size > limit, "sample_rows": len(selected), "row_count": size}
@@ -283,19 +291,27 @@ class _JupyterExplorerData:
                 "histogram": histogram, "min": minimum, "max": maximum, "mean": mean,
                 "dtype": self.dtypes.get(str(column), "mixed")}
 
-    def search(self, source, flags=""):
+    def search(self, source, flags="", offset=0, match_limit=10000):
         import re
         options = (re.I if "i" in flags else 0) | (re.M if "m" in flags else 0) | (re.S if "s" in flags else 0)
         regex = re.compile(source, options)
+        positions = self.indices()
+        offset = max(0, int(offset))
+        # Keep each shell request bounded so execution and navigation can run
+        # between slices. Return coordinates in the full filtered view.
+        row_budget = max(1, 32768 // max(1, len(self.columns)))
+        stop = min(len(positions), offset + row_budget)
+        match_limit = max(0, min(int(match_limit), 10000))
         matches, total = [], 0
-        for slot, row in enumerate(self.indices()):
-            for column in range(len(self.columns)):
-                value = self.clean(self.value(int(row), column))
+        for slot, row in enumerate(self.rows(list(positions[offset:stop])), start=offset):
+            for column, raw in enumerate(row):
+                value = self.clean(raw)
                 if value is not None and regex.search(str(value)):
                     total += 1
-                    if len(matches) < 10000:
+                    if len(matches) < match_limit:
                         matches.append({"row": slot, "column": column})
-        return {"matches": matches, "total": total, "limited": total > len(matches)}
+        return {"matches": matches, "total": total, "limited": total > len(matches),
+                "nextOffset": stop if stop < len(positions) else None}
 
 
 if "_jupyter_explorer_sessions" not in globals():
@@ -306,8 +322,12 @@ def _jupyter_explorer_open(session, obj, name):
     data = _JupyterExplorerData(obj, name)
     if data.kind is None:
         return None
+    result = data.metadata()
     _jupyter_explorer_sessions[session] = data
-    return data.metadata()
+    # Keep a bound even if a client disappears before it can send close.
+    while len(_jupyter_explorer_sessions) > 16:
+        _jupyter_explorer_sessions.pop(next(iter(_jupyter_explorer_sessions)))
+    return result
 
 
 def _jupyter_explorer_query(request):
@@ -317,7 +337,8 @@ def _jupyter_explorer_query(request):
         return {"closed": True}
     if session not in _jupyter_explorer_sessions:
         raise ValueError("The explorer session is gone. Refresh to load it again.")
-    data = _jupyter_explorer_sessions[session]
+    data = _jupyter_explorer_sessions.pop(session)
+    _jupyter_explorer_sessions[session] = data
     if action == "page":
         return data.page(request.get("offset", 0), request.get("limit", 200))
     if action == "query":
@@ -325,5 +346,6 @@ def _jupyter_explorer_query(request):
     if action == "profile":
         return data.profile(request["column"])
     if action == "search":
-        return data.search(request["source"], request.get("flags", ""))
+        return data.search(request["source"], request.get("flags", ""),
+                           request.get("offset", 0), request.get("matchLimit", 10000))
     raise ValueError("Unknown explorer query")

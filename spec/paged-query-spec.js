@@ -116,6 +116,24 @@ pythonSuite("full-data explorer sessions in Python", () => {
       },
     ]);
   });
+  it("continues a search from a bounded slice and keeps full-view coordinates", () => {
+    const result = evaluate(
+      "_jupyter_explorer_open('test', list(range(40000)), 'data')",
+      `first = _jupyter_explorer_query({'session':'test','action':'search','source':'^[0-9]+$', 'matchLimit': 1})\nlast = _jupyter_explorer_query({'session':'test','action':'search','source':'^39999$', 'offset':first['nextOffset']})\nprint(json.dumps({'first':first,'last':last}))`,
+    );
+    expect(result.first).toEqual({
+      matches: [{ row: 0, column: 0 }],
+      total: 32768,
+      limited: true,
+      nextOffset: 32768,
+    });
+    expect(result.last).toEqual({
+      matches: [{ row: 39999, column: 0 }],
+      total: 1,
+      limited: false,
+      nextOffset: null,
+    });
+  });
   it("keeps empty filtered views, null sorting, and session release well-defined", async () => {
     const result = evaluate(
       "_jupyter_explorer_open('test', [3,None,1,2], 'data')",
@@ -136,6 +154,13 @@ pythonSuite("full-data explorer sessions in Python", () => {
     );
     expect(result.live).toBe(0);
     expect(result.sessions).toBe(0);
+  });
+  it("limits orphan sessions without evicting the most recently read table", () => {
+    const result = evaluate(
+      "for i in range(16):\n    _jupyter_explorer_open(str(i), [i], 'data')",
+      `\n_jupyter_explorer_query({'session':'0','action':'page'})\n_jupyter_explorer_open('fresh', [99], 'data')\nprint(json.dumps({'size':len(_jupyter_explorer_sessions),'recent':'0' in _jupyter_explorer_sessions,'old':'1' in _jupyter_explorer_sessions}))`,
+    );
+    expect(result).toEqual({ size: 16, recent: true, old: false });
   });
   it("opens Parquet, Feather, Arrow IPC files and streams without editor-side decoding", async () => {
     if (!requireModule("pyarrow")) return;
@@ -503,6 +528,52 @@ describe("paged explorer lifecycle", () => {
     expect(search.matches).toEqual([]);
     search.destroy();
     await settle();
+  });
+  it("coalesces pending searches and accumulates slices from the newest pattern", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    await settle();
+    finish(source.requests[0], payload());
+    await settle();
+    const search = store.getSearchAdapter();
+    for (const findPattern of ["old", "intermediate", "latest"]) {
+      search.search({ findPattern, getFindPatternRegex: () => new RegExp(findPattern) });
+    }
+    expect(source.requests.length).toBe(2);
+    finish(source.requests[1], { matches: [], total: 0, nextOffset: 5000 });
+    await settle();
+    expect(source.requests.length).toBe(3);
+    expect(source.requests[2].code).toContain("latest");
+    expect(source.requests[2].specification.priority).toBe("background");
+    finish(source.requests[2], { matches: [{ row: 1, column: 0 }], total: 1, nextOffset: 5000 });
+    await settle();
+    expect(source.requests[3].code).toContain('\\"offset\\":5000');
+    finish(source.requests[3], { matches: [{ row: 8000, column: 0 }], total: 1, nextOffset: null });
+    await settle();
+    expect(search.matches).toEqual([
+      { row: 1, column: 0 },
+      { row: 8000, column: 0 },
+    ]);
+    expect(store.searchTotal).toBe(2);
+  });
+
+  it("keeps session cleanup queued without the interactive query timeout", async () => {
+    const source = kernel();
+    store.load(source, "data");
+    await settle();
+    store.reset();
+    const cleanup = source.requests.at(-1);
+    expect(cleanup.code).toContain('\\"action\\":\\"close\\"');
+    expect(cleanup.specification.timeoutMs).toBe(0);
+    expect(cleanup.specification.priority).toBeUndefined();
+    cleanup.finish({ status: "unavailable" });
+    await settle();
+    const retry = source.requests.at(-1);
+    expect(retry).not.toBe(cleanup);
+    expect(retry.code).toBe(cleanup.code);
+    retry.finish();
+    await settle();
+    expect(retry.disposed).toBe(true);
   });
   it("shows full-data profile controls and labels chart sampling", async () => {
     store.setPayload(payload());
