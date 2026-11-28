@@ -737,25 +737,21 @@ function renderAxisSelect({ label, value, options, optional, onChange, axisKey, 
           <>
             <button
               type="button"
-              className="btn icon-button"
+              className="btn native-key-bindings"
               title={`Compress ${label} axis`}
               attributes={{ "aria-label": `Compress ${label} axis` }}
               onClick={() => onStretch(axisKey, 1.25)}
             >
-              <span className="icon-button-glyph" aria-hidden="true">
-                −
-              </span>
+              −
             </button>
             <button
               type="button"
-              className="btn icon-button"
+              className="btn native-key-bindings"
               title={`Stretch ${label} axis`}
               attributes={{ "aria-label": `Stretch ${label} axis` }}
               onClick={() => onStretch(axisKey, 0.8)}
             >
-              <span className="icon-button-glyph" aria-hidden="true">
-                +
-              </span>
+              +
             </button>
           </>
         ) : null}
